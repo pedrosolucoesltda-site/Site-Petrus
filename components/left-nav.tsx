@@ -49,7 +49,7 @@ export function LeftNav({
         <button
           type="submit"
           title={`Sair (${userLabel})`}
-          className="flex h-[34px] items-center justify-center rounded-lg bg-panel-alt px-3 font-grotesk text-[11px] font-semibold text-text-secondary transition-colors hover:text-text-primary"
+          className="flex h-[34px] items-center justify-center rounded-lg bg-panel-alt px-3 font-grotesk text-[11px] font-bold text-text-secondary transition-colors hover:text-text-primary"
         >
           Sair
         </button>
