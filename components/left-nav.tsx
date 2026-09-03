@@ -5,7 +5,6 @@ import { usePathname } from "next/navigation";
 import { MODULES } from "@/lib/modules";
 import { MODULE_ICONS } from "@/components/icons";
 import { cn } from "@/components/ui";
-import { initials } from "@/lib/format";
 
 export function LeftNav({
   isAdmin,
@@ -50,9 +49,9 @@ export function LeftNav({
         <button
           type="submit"
           title={`Sair (${userLabel})`}
-          className="flex h-[34px] w-[34px] items-center justify-center rounded-lg bg-panel-alt font-grotesk text-[11px] font-semibold text-text-secondary transition-colors hover:text-text-primary"
+          className="flex h-[34px] items-center justify-center rounded-lg bg-panel-alt px-3 font-grotesk text-[11px] font-semibold text-text-secondary transition-colors hover:text-text-primary"
         >
-          {initials(userLabel)}
+          Sair
         </button>
       </form>
     </nav>
