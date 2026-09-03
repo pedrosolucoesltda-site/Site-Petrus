@@ -98,6 +98,17 @@ export function deadlineLabel(
   return `Venceu há ${abs} ${abs === 1 ? "dia" : "dias"}`;
 }
 
+/** 1,2 MB · 340 KB · 512 B */
+export function fileSize(bytes: number): string {
+  const b = bytes ?? 0;
+  if (b < 1024) return `${b} B`;
+  if (b < 1024 * 1024)
+    return `${(b / 1024).toLocaleString("pt-BR", { maximumFractionDigits: 0 })} KB`;
+  return `${(b / (1024 * 1024)).toLocaleString("pt-BR", {
+    maximumFractionDigits: 1,
+  })} MB`;
+}
+
 export function initials(name: string | null | undefined, max = 2): string {
   if (!name) return "—";
   return name

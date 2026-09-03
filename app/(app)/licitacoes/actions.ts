@@ -131,3 +131,65 @@ export async function removeChecklistItem(formData: FormData): Promise<void> {
   await supabase.from("licitacao_checklist").delete().eq("id", id);
   revalidatePath("/licitacoes");
 }
+
+/* ---------------- arquivos (Storage) ---------------- */
+
+const BUCKET = "licitacao-arquivos";
+
+/** Registra o metadado de um arquivo já enviado ao Storage pelo cliente. */
+export async function registerArquivo(formData: FormData): Promise<ActionState> {
+  const session = await requireSession();
+  const licitacao_id = String(formData.get("licitacao_id") ?? "");
+  const nome = String(formData.get("nome") ?? "").trim();
+  const caminho = String(formData.get("caminho") ?? "");
+  const tamanho = Number(formData.get("tamanho") ?? 0) || 0;
+  const tipo = String(formData.get("tipo") ?? "") || null;
+  if (!licitacao_id || !nome || !caminho) return { error: "Dados do arquivo incompletos." };
+
+  const supabase = await createClient();
+  const { error } = await supabase.from("licitacao_arquivos").insert({
+    licitacao_id,
+    nome,
+    caminho,
+    tamanho,
+    tipo,
+    criado_por: session.user.id,
+  });
+  if (error) {
+    // desfaz o upload órfão
+    await supabase.storage.from(BUCKET).remove([caminho]);
+    return { error: error.message };
+  }
+  revalidatePath("/licitacoes");
+  return { ok: true };
+}
+
+export async function removeArquivo(formData: FormData): Promise<void> {
+  await requireSession();
+  const id = String(formData.get("id") ?? "");
+  if (!id) return;
+  const supabase = await createClient();
+
+  const { data } = await supabase
+    .from("licitacao_arquivos")
+    .select("caminho")
+    .eq("id", id)
+    .maybeSingle();
+  if (data?.caminho) {
+    await supabase.storage.from(BUCKET).remove([data.caminho]);
+  }
+  await supabase.from("licitacao_arquivos").delete().eq("id", id);
+  revalidatePath("/licitacoes");
+}
+
+/** URL assinada de curta duração para baixar um anexo. */
+export async function getArquivoUrl(caminho: string): Promise<string | null> {
+  await requireSession();
+  if (!caminho) return null;
+  const supabase = await createClient();
+  const { data, error } = await supabase.storage
+    .from(BUCKET)
+    .createSignedUrl(caminho, 120);
+  if (error) return null;
+  return data.signedUrl;
+}

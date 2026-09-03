@@ -64,6 +64,17 @@ export type LicitacaoChecklist = {
   entregue: boolean;
 };
 
+export type LicitacaoArquivo = {
+  id: string;
+  licitacao_id: string;
+  nome: string;
+  caminho: string;
+  tamanho: number;
+  tipo: string | null;
+  criado_por: string | null;
+  created_at: string;
+};
+
 export type ContaPagar = {
   id: string;
   fornecedor: string;
@@ -153,6 +164,7 @@ export type Database = {
       obras: TableShape<Obra>;
       licitacoes: TableShape<Licitacao>;
       licitacao_checklist: TableShape<LicitacaoChecklist>;
+      licitacao_arquivos: TableShape<LicitacaoArquivo>;
       contas_pagar: TableShape<ContaPagar>;
       contas_receber: TableShape<ContaReceber>;
       fluxo_caixa_mensal: TableShape<FluxoCaixaMensal>;

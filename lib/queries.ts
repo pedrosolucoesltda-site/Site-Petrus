@@ -9,6 +9,7 @@ import type {
   Fornecedor,
   FornecedorCompra,
   Licitacao,
+  LicitacaoArquivo,
   LicitacaoChecklist,
   Obra,
 } from "@/lib/database.types";
@@ -88,11 +89,13 @@ export interface LicitacaoComChecklist extends Licitacao {
   checklist: LicitacaoChecklist[];
   docsEntregues: number;
   docsTotal: number;
+  arquivos: LicitacaoArquivo[];
 }
 
 function mapLicitacoes(
   lics: Licitacao[],
   checks: LicitacaoChecklist[],
+  arquivos: LicitacaoArquivo[] = [],
 ): LicitacaoComChecklist[] {
   return lics.map((l) => {
     const checklist = checks.filter((c) => c.licitacao_id === l.id);
@@ -101,6 +104,9 @@ function mapLicitacoes(
       checklist,
       docsEntregues: checklist.filter((c) => c.entregue).length,
       docsTotal: checklist.length,
+      arquivos: arquivos
+        .filter((a) => a.licitacao_id === l.id)
+        .sort((a, b) => (a.created_at < b.created_at ? 1 : -1)),
     };
   });
 }
@@ -110,10 +116,11 @@ export async function getLicitacoes(): Promise<LicitacaoComChecklist[]> {
     return mapLicitacoes(
       byDateAsc(demo.licitacoes, (l) => l.prazo_envio),
       demo.licitacaoChecklist,
+      [],
     );
   }
   const supabase = await createClient();
-  const [lics, checks] = await Promise.all([
+  const [lics, checks, arquivos] = await Promise.all([
     safe<Licitacao>(
       () =>
         supabase
@@ -126,9 +133,13 @@ export async function getLicitacoes(): Promise<LicitacaoComChecklist[]> {
       () => supabase.from("licitacao_checklist").select("*"),
       "licitacao_checklist",
     ),
+    safe<LicitacaoArquivo>(
+      () => supabase.from("licitacao_arquivos").select("*"),
+      "licitacao_arquivos",
+    ),
   ]);
 
-  return mapLicitacoes(lics, checks);
+  return mapLicitacoes(lics, checks, arquivos);
 }
 
 /* ------------------------------------------------------------------ Financeiro */

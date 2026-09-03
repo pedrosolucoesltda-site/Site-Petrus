@@ -63,7 +63,9 @@ Aplique o schema (SQL Editor do dashboard, ou `supabase db push` com a CLI):
 
 1. `supabase/migrations/0001_schema.sql` — tabelas, enums, triggers, `is_admin()`
 2. `supabase/migrations/0002_rls.sql` — RLS de todos os módulos
-3. `supabase/seed.sql` — dados de demonstração (opcional, extraídos dos protótipos)
+3. `supabase/migrations/0003_hardening.sql` — hardening (search_path, revoke RPC)
+4. `supabase/migrations/0004_licitacao_arquivos.sql` — bucket de Storage + anexos de editais
+5. `supabase/seed.sql` — dados de demonstração (opcional, extraídos dos protótipos)
 
 > Com a Supabase CLI: `supabase db reset` aplica migrations + seed de uma vez.
 
