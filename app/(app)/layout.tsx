@@ -4,6 +4,9 @@ import { getSession } from "@/lib/auth";
 import { LeftNav } from "@/components/left-nav";
 import { AssistantRail } from "@/components/assistant-rail";
 
+// ERP interno: dados por usuário (RLS) e sempre atuais — nada de cache/prerender.
+export const dynamic = "force-dynamic";
+
 export default async function AppLayout({
   children,
 }: {

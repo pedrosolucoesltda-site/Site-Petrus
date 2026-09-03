@@ -9,6 +9,9 @@
     "lint": "next lint",
     "typecheck": "tsc --noEmit"
   },
+  "engines": {
+    "node": ">=20"
+  },
   "dependencies": {
     "@anthropic-ai/sdk": "^0.68.0",
     "@supabase/ssr": "^0.7.0",

@@ -82,7 +82,7 @@ Preencha:
 | `ANTHROPIC_API_KEY`             | console.anthropic.com → API Keys             |
 | `ANTHROPIC_MODEL`               | opcional, padrão `claude-opus-5`             |
 
-Sem `NEXT_PUBLIC_SUPABASE_*` o app sobe e mostra uma tela de setup.
+Sem `NEXT_PUBLIC_SUPABASE_*` o app roda em modo demonstração (ver acima).
 Sem `ANTHROPIC_API_KEY` os assistentes respondem com um aviso de configuração.
 
 ### 4. Primeiro usuário / administrador
@@ -112,6 +112,41 @@ npm run dev
 | `npm start`         | Servir o build                         |
 | `npm run typecheck` | `tsc --noEmit`                          |
 | `npm run lint`      | ESLint (`next lint`)                    |
+
+## Deploy na Vercel
+
+1. **Importar** o repositório em [vercel.com/new](https://vercel.com/new).
+   O Next.js é detectado sozinho — não precisa mexer em build command,
+   output nem `vercel.json`. Node 20+ (definido em `package.json → engines`).
+
+2. **Variáveis de ambiente** (Project → Settings → Environment Variables).
+   Adicione **antes do primeiro build** — as `NEXT_PUBLIC_*` são embutidas no
+   bundle em tempo de build; se adicionar depois, faça *Redeploy*.
+
+   | Variável | Ambiente | Observação |
+   | --- | --- | --- |
+   | `NEXT_PUBLIC_SUPABASE_URL` | Production, Preview | Supabase → Settings → API |
+   | `NEXT_PUBLIC_SUPABASE_ANON_KEY` | Production, Preview | idem |
+   | `SUPABASE_SERVICE_ROLE_KEY` | Production | server-only; opcional |
+   | `ANTHROPIC_API_KEY` | Production, Preview | console.anthropic.com |
+   | `ANTHROPIC_MODEL` | opcional | padrão `claude-opus-5` |
+
+3. **Supabase → Authentication → URL Configuration**
+   - *Site URL*: `https://<seu-projeto>.vercel.app`
+   - *Redirect URLs*: adicione `https://<seu-projeto>.vercel.app/auth/callback`
+     (e a URL de cada Preview, se for usar magic link / recuperação de senha).
+
+4. **Aplicar migrations + seed** no projeto Supabase de produção
+   (SQL Editor ou `supabase db push`), e criar o primeiro usuário `admin`
+   (ver seção anterior).
+
+> **Atenção:** se publicar **sem** as variáveis do Supabase, o site vai ao ar em
+> **modo demonstração** — acessível publicamente, sem login, com dados fictícios.
+> Configure o Supabase antes de divulgar a URL, ou ligue a proteção por senha da
+> Vercel (Settings → Deployment Protection) enquanto isso.
+
+O endpoint dos assistentes (`/api/assistants/chat`) roda no runtime Node com
+`maxDuration = 60` (limite do plano Hobby). No plano Pro dá para aumentar.
 
 ## Estrutura
 
