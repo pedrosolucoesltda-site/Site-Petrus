@@ -1,0 +1,79 @@
+@import "tailwindcss";
+
+/* ──────────────────────────────────────────────────────────────
+   Design system — extracted from the Petrus Soluções prototypes.
+   Dark theme only. Tokens are exposed as Tailwind utilities:
+   bg-panel, text-secondary, border-soft, font-grotesk, rounded-md …
+   ────────────────────────────────────────────────────────────── */
+@theme {
+  --color-canvas: #121210;
+  --color-panel: #1a1a17;
+  --color-panel-alt: #1e1e1a;
+  --color-rail: #171714;
+
+  --color-border: #2c2c27;
+  --color-border-soft: #232320;
+
+  --color-text-primary: #f2f0e8;
+  --color-text-secondary: #a6a399;
+  --color-text-muted: #75726a;
+
+  --color-gold: #d4a72c;
+  --color-gold-dim: #8a7328;
+
+  --color-positive: #7bb069;
+  --color-alert: #d98b3f;
+  --color-risk: #c1594f;
+
+  /* per-module accents */
+  --color-teal: #4fb0a0;
+  --color-teal-dim: #356f66;
+  --color-blue: #6b93c9;
+  --color-purple: #9b86c9;
+  --color-brick: #c17d4f;
+
+  --font-sans: var(--font-inter), ui-sans-serif, system-ui, sans-serif;
+  --font-grotesk: var(--font-grotesk-src), var(--font-inter), sans-serif;
+
+  --radius-sm: 6px;
+  --radius-md: 10px;
+}
+
+* {
+  box-sizing: border-box;
+}
+
+html,
+body {
+  padding: 0;
+  margin: 0;
+}
+
+body {
+  background: var(--color-canvas);
+  color: var(--color-text-primary);
+  font-family: var(--font-sans);
+  font-size: 14px;
+  -webkit-font-smoothing: antialiased;
+  -moz-osx-font-smoothing: grayscale;
+}
+
+/* thin scrollbars that match the dark surfaces */
+* {
+  scrollbar-width: thin;
+  scrollbar-color: var(--color-border) transparent;
+}
+*::-webkit-scrollbar {
+  width: 8px;
+  height: 8px;
+}
+*::-webkit-scrollbar-thumb {
+  background: var(--color-border);
+  border-radius: 4px;
+}
+
+/* numeric / value typography helper */
+.tabular {
+  font-family: var(--font-grotesk);
+  font-feature-settings: "tnum";
+}
