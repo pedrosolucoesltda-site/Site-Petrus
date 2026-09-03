@@ -36,3 +36,7 @@ yarn-error.log*
 
 # claude code local settings
 .claude/settings.local.json
+
+# agent skills — symlinks específicos da máquina (regenerar com: npx skills experimental_install)
+.claude/skills/
+.agents/skills/*/node_modules/
