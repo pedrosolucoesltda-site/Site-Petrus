@@ -6,7 +6,8 @@ export type ModuleKey =
   | "licitacoes"
   | "financeiro"
   | "documentos"
-  | "fornecedores";
+  | "fornecedores"
+  | "usuarios";
 
 export interface ModuleDef {
   key: ModuleKey;
@@ -34,6 +35,13 @@ export const MODULES: ModuleDef[] = [
     label: "Fornecedores",
     href: "/fornecedores",
     accent: "purple",
+  },
+  {
+    key: "usuarios",
+    label: "Usuários",
+    href: "/usuarios",
+    accent: "gold",
+    adminOnly: true,
   },
 ];
 

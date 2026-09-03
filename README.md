@@ -13,6 +13,7 @@ Supabase (Postgres, Auth, RLS) + assistentes de IA (API da Anthropic).
 | `/financeiro`   | Financeiro    | **Somente administradores**              |
 | `/documentos`   | Documentos    | Todos leem; só admin edita/exclui        |
 | `/fornecedores` | Fornecedores  | Todos (leitura + escrita)                |
+| `/usuarios`     | Usuários      | **Somente administradores** (criar / promover / remover) |
 
 Barra fixa de **5 assistentes de IA** à direita em todas as telas
 (Análise de Edital, Engenheiro de Planilhas, Auditor de Habilitação,
@@ -87,13 +88,18 @@ Sem `ANTHROPIC_API_KEY` os assistentes respondem com um aviso de configuração.
 
 ### 4. Primeiro usuário / administrador
 
-Em **Authentication → Users → Add user** crie a conta. Um registro em
-`public.profiles` é criado automaticamente com `role = 'user'`. Para torná-lo
-administrador (acesso ao Financeiro):
+Em **Authentication → Users → Add user** crie a conta (marque **Auto Confirm
+User**). Um registro em `public.profiles` é criado automaticamente com
+`role = 'user'`. Para torná-lo administrador:
 
 ```sql
-update public.profiles set role = 'admin' where id = '<uuid-do-usuario>';
+update public.profiles set role = 'admin'
+where id = (select id from auth.users order by created_at desc limit 1);
 ```
+
+A partir daí, os demais usuários são criados **dentro do sistema** em
+`/usuarios` (só admin) — sem voltar ao painel do Supabase. Isso exige a
+`SUPABASE_SERVICE_ROLE_KEY` configurada (item 3).
 
 ### 5. Rodar
 
@@ -127,7 +133,7 @@ npm run dev
    | --- | --- | --- |
    | `NEXT_PUBLIC_SUPABASE_URL` | Production, Preview | Supabase → Settings → API |
    | `NEXT_PUBLIC_SUPABASE_ANON_KEY` | Production, Preview | idem |
-   | `SUPABASE_SERVICE_ROLE_KEY` | Production | server-only; opcional |
+   | `SUPABASE_SERVICE_ROLE_KEY` | Production | server-only; necessária para a tela `/usuarios` |
    | `ANTHROPIC_API_KEY` | Production, Preview | console.anthropic.com |
    | `ANTHROPIC_MODEL` | opcional | padrão `claude-opus-5` |
 
@@ -152,14 +158,16 @@ O endpoint dos assistentes (`/api/assistants/chat`) roda no runtime Node com
 
 ```
 app/
-  (app)/                 layout com nav + barra de assistentes; telas dos 6 módulos
+  (app)/                 layout com nav + barra de assistentes; telas dos módulos
+    usuarios/            gestão de equipe (admin) — page + server actions
   login/                 tela de login (email/senha)
   auth/callback|signout  rotas de sessão Supabase
   api/assistants/chat    streaming da resposta da IA + persistência do histórico
 components/               nav, barra de assistentes, painel de chat, UI primitives
 lib/
-  supabase/              clients browser/server + middleware de sessão
+  supabase/              clients browser/server/admin + middleware de sessão
   queries.ts             acesso a dados por módulo (server-only)
+  users.ts               listagem de usuários (auth.users + profiles, server-only)
   assistants.ts          os 5 assistentes + system prompts
   modules.ts             navegação + cor de destaque por módulo
   format.ts              formatação pt-BR (moeda, datas, %)

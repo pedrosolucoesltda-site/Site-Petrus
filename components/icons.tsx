@@ -68,6 +68,16 @@ export function FornecedoresIcon(p: IconProps) {
   );
 }
 
+export function UsuariosIcon(p: IconProps) {
+  return (
+    <svg {...base} {...p}>
+      <circle cx="9" cy="7" r="3.2" />
+      <path d="M2.5 20v-1.2A5 5 0 0 1 7.5 14h3a5 5 0 0 1 5 4.8V20" />
+      <path d="M17 7.5a3 3 0 0 1 0 5.5M19.5 20v-1a4 4 0 0 0-3-3.6" />
+    </svg>
+  );
+}
+
 export function LockIcon(p: IconProps) {
   return (
     <svg {...base} strokeWidth={2} {...p}>
@@ -112,4 +122,5 @@ export const MODULE_ICONS: Record<
   financeiro: FinanceiroIcon,
   documentos: DocumentosIcon,
   fornecedores: FornecedoresIcon,
+  usuarios: UsuariosIcon,
 };

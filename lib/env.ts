@@ -13,6 +13,9 @@ export const ANTHROPIC_API_KEY = process.env.ANTHROPIC_API_KEY ?? "";
 export const ANTHROPIC_MODEL = process.env.ANTHROPIC_MODEL || "claude-opus-5";
 
 export const isSupabaseConfigured = Boolean(SUPABASE_URL && SUPABASE_ANON_KEY);
+export const isServiceRoleConfigured = Boolean(
+  SUPABASE_URL && SUPABASE_SERVICE_ROLE_KEY,
+);
 export const isAnthropicConfigured = Boolean(ANTHROPIC_API_KEY);
 
 /**

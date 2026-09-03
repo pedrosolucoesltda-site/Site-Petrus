@@ -1,5 +1,6 @@
 import { cookies } from "next/headers";
 import { createServerClient } from "@supabase/ssr";
+import { createClient as createSupabaseClient } from "@supabase/supabase-js";
 import {
   SUPABASE_ANON_KEY,
   SUPABASE_SERVICE_ROLE_KEY,
@@ -41,12 +42,13 @@ export async function createClient() {
 }
 
 /**
- * Privileged client that bypasses RLS. Server-only. Use sparingly — e.g. an
- * admin creating users. Returns null when the service role key is not set.
+ * Privileged client that bypasses RLS and exposes `auth.admin.*`.
+ * Server-only — the service role key must NEVER reach the browser.
+ * Returns null when SUPABASE_SERVICE_ROLE_KEY is not configured.
  */
 export function createAdminClient() {
   if (!SUPABASE_URL || !SUPABASE_SERVICE_ROLE_KEY) return null;
-  return createServerClient<Database>(SUPABASE_URL, SUPABASE_SERVICE_ROLE_KEY, {
-    cookies: { getAll: () => [], setAll: () => {} },
+  return createSupabaseClient<Database>(SUPABASE_URL, SUPABASE_SERVICE_ROLE_KEY, {
+    auth: { autoRefreshToken: false, persistSession: false },
   });
 }
