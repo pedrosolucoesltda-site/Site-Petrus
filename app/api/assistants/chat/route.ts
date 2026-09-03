@@ -1,8 +1,13 @@
 import { NextResponse, type NextRequest } from "next/server";
 import Anthropic from "@anthropic-ai/sdk";
 import { createClient } from "@/lib/supabase/server";
-import { getAssistant } from "@/lib/assistants";
-import { ANTHROPIC_API_KEY, ANTHROPIC_MODEL, isAnthropicConfigured } from "@/lib/env";
+import { getAssistant, type AssistantDef } from "@/lib/assistants";
+import {
+  ANTHROPIC_API_KEY,
+  ANTHROPIC_MODEL,
+  isAnthropicConfigured,
+  isDemoMode,
+} from "@/lib/env";
 
 export const runtime = "nodejs";
 export const maxDuration = 60;
@@ -13,15 +18,64 @@ interface Body {
   message: string;
 }
 
-export async function POST(request: NextRequest) {
-  const supabase = await createClient();
-  const {
-    data: { user },
-  } = await supabase.auth.getUser();
-  if (!user) {
-    return NextResponse.json({ error: "não autenticado" }, { status: 401 });
-  }
+type ChatTurn = { role: "user" | "assistant"; content: string };
 
+function textHeaders(conversationId: string | null) {
+  const h: Record<string, string> = {
+    "Content-Type": "text/plain; charset=utf-8",
+    "Cache-Control": "no-store",
+  };
+  if (conversationId) h["X-Conversation-Id"] = conversationId;
+  return h;
+}
+
+/** Streams the Anthropic reply as plain text; calls `onDone` with the full text. */
+function streamReply(
+  assistant: AssistantDef,
+  messages: ChatTurn[],
+  conversationId: string | null,
+  onDone?: (fullText: string) => Promise<void> | void,
+): Response {
+  const anthropic = new Anthropic({ apiKey: ANTHROPIC_API_KEY });
+  const encoder = new TextEncoder();
+
+  const stream = new ReadableStream<Uint8Array>({
+    async start(controller) {
+      let full = "";
+      try {
+        const run = anthropic.messages.stream({
+          model: ANTHROPIC_MODEL,
+          max_tokens: 16000,
+          system: assistant.system,
+          messages,
+        });
+        for await (const event of run) {
+          if (
+            event.type === "content_block_delta" &&
+            event.delta.type === "text_delta"
+          ) {
+            full += event.delta.text;
+            controller.enqueue(encoder.encode(event.delta.text));
+          }
+        }
+      } catch (err) {
+        const msg =
+          err instanceof Anthropic.APIError
+            ? `\n\n[erro ${err.status}: ${err.message}]`
+            : "\n\n[erro ao consultar o assistente]";
+        full += msg;
+        controller.enqueue(encoder.encode(msg));
+      } finally {
+        controller.close();
+        await onDone?.(full || "[sem resposta]");
+      }
+    },
+  });
+
+  return new Response(stream, { headers: textHeaders(conversationId) });
+}
+
+export async function POST(request: NextRequest) {
   let body: Body;
   try {
     body = (await request.json()) as Body;
@@ -38,7 +92,27 @@ export async function POST(request: NextRequest) {
     );
   }
 
-  // ── ensure a conversation ─────────────────────────────────────────
+  const notice =
+    `[${assistant.name}] O assistente ainda não está conectado. ` +
+    `Defina ANTHROPIC_API_KEY em .env.local para ativar as respostas de IA.`;
+
+  // ── modo demonstração: sem Supabase, sem histórico persistido ─────
+  if (isDemoMode) {
+    if (!isAnthropicConfigured) {
+      return new Response(notice, { headers: textHeaders(null) });
+    }
+    return streamReply(assistant, [{ role: "user", content: message }], null);
+  }
+
+  // ── modo real: autentica, persiste histórico por usuário ──────────
+  const supabase = await createClient();
+  const {
+    data: { user },
+  } = await supabase.auth.getUser();
+  if (!user) {
+    return NextResponse.json({ error: "não autenticado" }, { status: 401 });
+  }
+
   let conversationId = body.conversationId ?? null;
   if (!conversationId) {
     const { data, error } = await supabase
@@ -58,7 +132,6 @@ export async function POST(request: NextRequest) {
     }
     conversationId = data.id as string;
   } else {
-    // touch updated_at + verify ownership through RLS
     const { error } = await supabase
       .from("assistant_conversations")
       .update({ updated_at: new Date().toISOString() })
@@ -71,14 +144,6 @@ export async function POST(request: NextRequest) {
     }
   }
 
-  if (!conversationId) {
-    return NextResponse.json(
-      { error: "conversa indisponível" },
-      { status: 500 },
-    );
-  }
-
-  // ── load history + persist the new user message ───────────────────
   const { data: history } = await supabase
     .from("assistant_messages")
     .select("role, content")
@@ -92,73 +157,24 @@ export async function POST(request: NextRequest) {
     content: message,
   });
 
-  const messages = [
+  const messages: ChatTurn[] = [
     ...(history ?? []).map((m) => ({
       role: m.role as "user" | "assistant",
       content: m.content,
     })),
-    { role: "user" as const, content: message },
+    { role: "user", content: message },
   ];
 
-  const headers = {
-    "Content-Type": "text/plain; charset=utf-8",
-    "Cache-Control": "no-store",
-    "X-Conversation-Id": conversationId,
+  const persist = async (content: string): Promise<void> => {
+    await supabase
+      .from("assistant_messages")
+      .insert({ conversation_id: conversationId, role: "assistant", content });
   };
 
-  // ── no API key: still a useful, persisted reply ───────────────────
   if (!isAnthropicConfigured) {
-    const notice =
-      `[${assistant.name}] O assistente ainda não está conectado. ` +
-      `Defina ANTHROPIC_API_KEY em .env.local para ativar as respostas de IA.`;
-    await supabase.from("assistant_messages").insert({
-      conversation_id: conversationId,
-      role: "assistant",
-      content: notice,
-    });
-    return new Response(notice, { headers });
+    await persist(notice);
+    return new Response(notice, { headers: textHeaders(conversationId) });
   }
 
-  const anthropic = new Anthropic({ apiKey: ANTHROPIC_API_KEY });
-
-  const stream = new ReadableStream<Uint8Array>({
-    async start(controller) {
-      const encoder = new TextEncoder();
-      let full = "";
-      try {
-        const run = anthropic.messages.stream({
-          model: ANTHROPIC_MODEL,
-          max_tokens: 16000,
-          system: assistant.system,
-          messages,
-        });
-
-        for await (const event of run) {
-          if (
-            event.type === "content_block_delta" &&
-            event.delta.type === "text_delta"
-          ) {
-            full += event.delta.text;
-            controller.enqueue(encoder.encode(event.delta.text));
-          }
-        }
-      } catch (err) {
-        const msg =
-          err instanceof Anthropic.APIError
-            ? `\n\n[erro ${err.status}: ${err.message}]`
-            : "\n\n[erro ao consultar o assistente]";
-        full += msg;
-        controller.enqueue(new TextEncoder().encode(msg));
-      } finally {
-        controller.close();
-        await supabase.from("assistant_messages").insert({
-          conversation_id: conversationId,
-          role: "assistant",
-          content: full || "[sem resposta]",
-        });
-      }
-    },
-  });
-
-  return new Response(stream, { headers });
+  return streamReply(assistant, messages, conversationId, persist);
 }

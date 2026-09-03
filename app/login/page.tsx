@@ -1,28 +1,13 @@
 import { Suspense } from "react";
-import { isSupabaseConfigured } from "@/lib/env";
-import { SetupNotice } from "@/components/ui";
+import { redirect } from "next/navigation";
+import { isDemoMode } from "@/lib/env";
 import { LoginForm } from "@/components/login-form";
 
 export const metadata = { title: "Entrar — Petrus Soluções" };
 
 export default function LoginPage() {
-  if (!isSupabaseConfigured) {
-    return (
-      <main className="min-h-screen">
-        <SetupNotice
-          title="Conecte o Supabase para ativar o login"
-          file=".env.local"
-          steps={[
-            "Crie um projeto em app.supabase.com.",
-            "Copie .env.local.example para .env.local e preencha NEXT_PUBLIC_SUPABASE_URL e NEXT_PUBLIC_SUPABASE_ANON_KEY.",
-            "Rode as migrations em supabase/migrations e o supabase/seed.sql.",
-            "Crie o primeiro usuário e defina role = 'admin' na tabela profiles.",
-            "Reinicie o servidor de desenvolvimento.",
-          ]}
-        />
-      </main>
-    );
-  }
+  // No modo demonstração não há login — vai direto para o painel.
+  if (isDemoMode) redirect("/painel");
 
   return (
     <main className="flex min-h-screen items-center justify-center px-4">

@@ -14,3 +14,11 @@ export const ANTHROPIC_MODEL = process.env.ANTHROPIC_MODEL || "claude-opus-5";
 
 export const isSupabaseConfigured = Boolean(SUPABASE_URL && SUPABASE_ANON_KEY);
 export const isAnthropicConfigured = Boolean(ANTHROPIC_API_KEY);
+
+/**
+ * Modo demonstração: enquanto o Supabase não estiver configurado, o site roda
+ * com dados fictícios em memória (lib/demo-data) e sem exigir login — assim dá
+ * para ver todas as telas funcionando. Basta preencher as variáveis
+ * NEXT_PUBLIC_SUPABASE_* para passar automaticamente ao modo real.
+ */
+export const isDemoMode = !isSupabaseConfigured;

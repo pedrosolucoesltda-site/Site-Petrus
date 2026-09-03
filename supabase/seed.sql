@@ -7,12 +7,12 @@
 
 -- ---------- Obras ----------
 insert into obras (id, nome, cidade_uf, status, progresso_pct, responsavel, data_entrega_prevista, orcamento, custo_realizado) values
-  ('a0000000-0000-4000-8000-000000000001', 'Residencial Bosque Verde',            'Niterói, RJ',        'em_dia',   72, 'Lucas Cardoso',  current_date + 120, 4100000, 2952000),
-  ('a0000000-0000-4000-8000-000000000002', 'Galpão Industrial Zona Oeste',        'Rio de Janeiro, RJ', 'atencao',  41, 'Marina Rocha',   current_date + 210, 2600000, 1248000),
-  ('a0000000-0000-4000-8000-000000000003', 'Reforma Sede Administrativa',         'Duque de Caxias, RJ','em_dia',   88, 'Paulo Siqueira', current_date + 55,   890000,  812000),
-  ('a0000000-0000-4000-8000-000000000004', 'Condomínio Vista do Mar',             'São Gonçalo, RJ',    'em_dia',   19, 'Lucas Cardoso',  current_date + 300, 5400000, 972000),
-  ('a0000000-0000-4000-8000-000000000005', 'Escola Municipal Jardim das Flores',  'Itaboraí, RJ',       'atrasada', 34, 'Marina Rocha',   current_date + 25,  1900000, 1466600),
-  ('a0000000-0000-4000-8000-000000000006', 'Ampliação CEDAE — ETE Alegria',       'Rio de Janeiro, RJ', 'em_dia',   56, 'Paulo Siqueira', current_date + 165, 3200000, 1808000)
+  ('a0000000-0000-4000-8000-000000000001', 'Residencial Bosque Verde',            'Niterói, RJ',        'em_dia',   72, 'Lucas Cardoso',  current_date + 120, 4100000, 2831000),
+  ('a0000000-0000-4000-8000-000000000002', 'Galpão Industrial Zona Oeste',        'Rio de Janeiro, RJ', 'atencao',  41, 'Marina Rocha',   current_date + 210, 2600000, 1107000),
+  ('a0000000-0000-4000-8000-000000000003', 'Reforma Sede Administrativa',         'Duque de Caxias, RJ','em_dia',   88, 'Paulo Siqueira', current_date + 55,   890000,  766000),
+  ('a0000000-0000-4000-8000-000000000004', 'Condomínio Vista do Mar',             'São Gonçalo, RJ',    'em_dia',   19, 'Lucas Cardoso',  current_date + 300, 5400000, 1018000),
+  ('a0000000-0000-4000-8000-000000000005', 'Escola Municipal Jardim das Flores',  'Itaboraí, RJ',       'atrasada', 34, 'Marina Rocha',   current_date + 25,  1900000, 694000),
+  ('a0000000-0000-4000-8000-000000000006', 'Ampliação CEDAE — ETE Alegria',       'Rio de Janeiro, RJ', 'em_dia',   56, 'Paulo Siqueira', current_date + 165, 3200000, 1765000)
 on conflict (id) do nothing;
 
 -- ---------- Licitações ----------
@@ -67,8 +67,8 @@ insert into fluxo_caixa_mensal (mes, entradas, saidas) values
   (date_trunc('month', current_date) - interval '4 months', 720000, 540000),
   (date_trunc('month', current_date) - interval '3 months', 610000, 655000),
   (date_trunc('month', current_date) - interval '2 months', 880000, 560000),
-  (date_trunc('month', current_date) - interval '1 months', 690000, 620000),
-  (date_trunc('month', current_date),                        940000, 705000)
+  (date_trunc('month', current_date) - interval '1 months', 760000, 610000),
+  (date_trunc('month', current_date),                        880000, 720000)
 on conflict (mes) do nothing;
 
 -- ---------- Fornecedores ----------

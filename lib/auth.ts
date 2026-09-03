@@ -1,8 +1,20 @@
 import { redirect } from "next/navigation";
 import type { User } from "@supabase/supabase-js";
 import { createClient } from "@/lib/supabase/server";
-import { isSupabaseConfigured } from "@/lib/env";
+import { isSupabaseConfigured, isDemoMode } from "@/lib/env";
 import type { Profile } from "@/lib/database.types";
+
+/** Sessão fictícia usada no modo demonstração (sem login, papel de admin). */
+const DEMO_SESSION: SessionInfo = {
+  user: { id: "demo-user", email: "demo@petrus.local" } as User,
+  profile: {
+    id: "demo-user",
+    full_name: "Visitante (demo)",
+    role: "admin",
+    created_at: new Date().toISOString(),
+  },
+  isAdmin: true,
+};
 
 export interface SessionInfo {
   user: User;
@@ -12,6 +24,7 @@ export interface SessionInfo {
 
 /** Reads the current user + profile row. Returns null when signed out. */
 export async function getSession(): Promise<SessionInfo | null> {
+  if (isDemoMode) return DEMO_SESSION;
   if (!isSupabaseConfigured) return null;
 
   try {

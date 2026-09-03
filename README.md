@@ -26,7 +26,26 @@ Redator Ninja, Balanço).
 - **@anthropic-ai/sdk** — um assistente = um system prompt + histórico por usuário
 - Deploy alvo: **Vercel**
 
-## Rodando localmente
+## Ver rodando agora (modo demonstração)
+
+Sem configurar nada:
+
+```bash
+npm install
+npm run dev
+```
+
+Abra `http://localhost:3000`. Enquanto o Supabase não estiver configurado, o
+site roda em **modo demonstração**: dados fictícios em memória
+([lib/demo-data.ts](lib/demo-data.ts), espelham o `seed.sql`), sem login e com
+papel de administrador — todas as 6 telas ficam navegáveis. Um aviso no topo
+lembra que é demonstração. Os assistentes de IA respondem com um aviso até a
+`ANTHROPIC_API_KEY` ser definida.
+
+Preencher `NEXT_PUBLIC_SUPABASE_*` no `.env.local` já troca automaticamente para
+o modo real (com login e RLS).
+
+## Rodando com Supabase
 
 ### 1. Dependências
 

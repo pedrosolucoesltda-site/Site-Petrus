@@ -3,6 +3,7 @@
 import { useEffect, useRef, useState } from "react";
 import { createClient } from "@/lib/supabase/client";
 import { getAssistant } from "@/lib/assistants";
+import { isDemoMode } from "@/lib/env";
 import { CloseIcon, SendIcon } from "@/components/icons";
 
 interface ChatMessage {
@@ -31,6 +32,12 @@ export function AssistantPanel({
     setLoadingHistory(true);
     setMessages([]);
     setConversationId(null);
+
+    // Modo demonstração: sem histórico persistido.
+    if (isDemoMode) {
+      setLoadingHistory(false);
+      return;
+    }
 
     (async () => {
       const supabase = createClient();

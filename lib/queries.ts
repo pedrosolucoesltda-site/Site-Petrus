@@ -1,5 +1,6 @@
 import { createClient } from "@/lib/supabase/server";
-import { isSupabaseConfigured } from "@/lib/env";
+import { isSupabaseConfigured, isDemoMode } from "@/lib/env";
+import * as demo from "@/lib/demo-data";
 import { daysUntil } from "@/lib/format";
 import type {
   ContaPagar,
@@ -33,7 +34,21 @@ async function safe<T>(
 
 /* ------------------------------------------------------------------ Obras */
 
+function byDateAsc<T>(items: T[], key: (t: T) => string | null): T[] {
+  return [...items].sort((a, b) => {
+    const av = key(a);
+    const bv = key(b);
+    if (av === bv) return 0;
+    if (av === null) return 1;
+    if (bv === null) return -1;
+    return av < bv ? -1 : 1;
+  });
+}
+
 export async function getObras(): Promise<Obra[]> {
+  if (isDemoMode) {
+    return byDateAsc(demo.obras, (o) => o.data_entrega_prevista);
+  }
   const supabase = await createClient();
   return safe<Obra>(
     () =>
@@ -51,9 +66,20 @@ export function obraProgressTone(o: Obra) {
   return "positive" as const;
 }
 
+/**
+ * Variação do custo realizado frente ao previsto **para o estágio atual**
+ * (orçamento pró-rateado pelo progresso). Positivo = acima do previsto.
+ */
 export function custoVariacaoPct(o: Obra): number {
+  const previsto = o.orcamento * (o.progresso_pct / 100);
+  if (!previsto) return 0;
+  return ((o.custo_realizado - previsto) / previsto) * 100;
+}
+
+/** Percentual do orçamento total já consumido. */
+export function custoConsumoPct(o: Obra): number {
   if (!o.orcamento) return 0;
-  return ((o.custo_realizado - o.orcamento) / o.orcamento) * 100;
+  return (o.custo_realizado / o.orcamento) * 100;
 }
 
 /* ------------------------------------------------------------------ Licitações */
@@ -64,7 +90,28 @@ export interface LicitacaoComChecklist extends Licitacao {
   docsTotal: number;
 }
 
+function mapLicitacoes(
+  lics: Licitacao[],
+  checks: LicitacaoChecklist[],
+): LicitacaoComChecklist[] {
+  return lics.map((l) => {
+    const checklist = checks.filter((c) => c.licitacao_id === l.id);
+    return {
+      ...l,
+      checklist,
+      docsEntregues: checklist.filter((c) => c.entregue).length,
+      docsTotal: checklist.length,
+    };
+  });
+}
+
 export async function getLicitacoes(): Promise<LicitacaoComChecklist[]> {
+  if (isDemoMode) {
+    return mapLicitacoes(
+      byDateAsc(demo.licitacoes, (l) => l.prazo_envio),
+      demo.licitacaoChecklist,
+    );
+  }
   const supabase = await createClient();
   const [lics, checks] = await Promise.all([
     safe<Licitacao>(
@@ -81,15 +128,7 @@ export async function getLicitacoes(): Promise<LicitacaoComChecklist[]> {
     ),
   ]);
 
-  return lics.map((l) => {
-    const checklist = checks.filter((c) => c.licitacao_id === l.id);
-    return {
-      ...l,
-      checklist,
-      docsEntregues: checklist.filter((c) => c.entregue).length,
-      docsTotal: checklist.length,
-    };
-  });
+  return mapLicitacoes(lics, checks);
 }
 
 /* ------------------------------------------------------------------ Financeiro */
@@ -102,6 +141,14 @@ export interface FinanceiroData {
 }
 
 export async function getFinanceiro(): Promise<FinanceiroData> {
+  if (isDemoMode) {
+    return {
+      contasPagar: byDateAsc(demo.contasPagar, (c) => c.vencimento),
+      contasReceber: byDateAsc(demo.contasReceber, (c) => c.vencimento),
+      fluxo: [...demo.fluxoCaixa],
+      obras: await getObras(),
+    };
+  }
   const supabase = await createClient();
   const [contasPagar, contasReceber, fluxo, obras] = await Promise.all([
     safe<ContaPagar>(
@@ -180,7 +227,29 @@ export function documentoStatus(dataValidade: string | null): DocumentoStatus {
   return "valido";
 }
 
+function mapDocumentos(
+  docs: Documento[],
+  obras: { id: string; nome: string }[],
+  lics: { id: string; objeto: string }[],
+): DocumentoComStatus[] {
+  const obraMap = new Map(obras.map((o) => [o.id, o.nome]));
+  const licMap = new Map(lics.map((l) => [l.id, l.objeto]));
+  return docs.map((d) => ({
+    ...d,
+    computedStatus: documentoStatus(d.data_validade),
+    obraNome: d.obra_id ? (obraMap.get(d.obra_id) ?? null) : null,
+    licitacaoObjeto: d.licitacao_id ? (licMap.get(d.licitacao_id) ?? null) : null,
+  }));
+}
+
 export async function getDocumentos(): Promise<DocumentoComStatus[]> {
+  if (isDemoMode) {
+    return mapDocumentos(
+      byDateAsc(demo.documentos, (d) => d.data_validade),
+      demo.obras,
+      demo.licitacoes,
+    );
+  }
   const supabase = await createClient();
   const [docs, obras, lics] = await Promise.all([
     safe<Documento>(
@@ -198,15 +267,7 @@ export async function getDocumentos(): Promise<DocumentoComStatus[]> {
     ),
   ]);
 
-  const obraMap = new Map(obras.map((o) => [o.id, o.nome]));
-  const licMap = new Map(lics.map((l) => [l.id, l.objeto]));
-
-  return docs.map((d) => ({
-    ...d,
-    computedStatus: documentoStatus(d.data_validade),
-    obraNome: d.obra_id ? (obraMap.get(d.obra_id) ?? null) : null,
-    licitacaoObjeto: d.licitacao_id ? (licMap.get(d.licitacao_id) ?? null) : null,
-  }));
+  return mapDocumentos(docs, obras, lics);
 }
 
 /* ------------------------------------------------------------------ Fornecedores */
@@ -217,20 +278,11 @@ export interface FornecedorComResumo extends Fornecedor {
   obrasVinculadas: string[];
 }
 
-export async function getFornecedores(): Promise<FornecedorComResumo[]> {
-  const supabase = await createClient();
-  const [forns, compras, obras] = await Promise.all([
-    safe<Fornecedor>(
-      () => supabase.from("fornecedores").select("*").order("nome"),
-      "fornecedores",
-    ),
-    safe<FornecedorCompra>(
-      () => supabase.from("fornecedor_compras").select("*"),
-      "fornecedor_compras",
-    ),
-    getObras(),
-  ]);
-
+function mapFornecedores(
+  forns: Fornecedor[],
+  compras: FornecedorCompra[],
+  obras: { id: string; nome: string }[],
+): FornecedorComResumo[] {
   const obraMap = new Map(obras.map((o) => [o.id, o.nome]));
 
   return forns.map((f) => {
@@ -253,6 +305,30 @@ export async function getFornecedores(): Promise<FornecedorComResumo[]> {
       obrasVinculadas,
     };
   });
+}
+
+export async function getFornecedores(): Promise<FornecedorComResumo[]> {
+  if (isDemoMode) {
+    return mapFornecedores(
+      [...demo.fornecedores].sort((a, b) => a.nome.localeCompare(b.nome)),
+      demo.fornecedorCompras,
+      demo.obras,
+    );
+  }
+  const supabase = await createClient();
+  const [forns, compras, obras] = await Promise.all([
+    safe<Fornecedor>(
+      () => supabase.from("fornecedores").select("*").order("nome"),
+      "fornecedores",
+    ),
+    safe<FornecedorCompra>(
+      () => supabase.from("fornecedor_compras").select("*"),
+      "fornecedor_compras",
+    ),
+    getObras(),
+  ]);
+
+  return mapFornecedores(forns, compras, obras);
 }
 
 /* ------------------------------------------------------------------ Painel geral */
