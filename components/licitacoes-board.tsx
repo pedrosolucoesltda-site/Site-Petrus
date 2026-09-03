@@ -1,12 +1,12 @@
 "use client";
 
-import { useActionState, useEffect, useRef, useState } from "react";
+import { useActionState, useEffect, useState } from "react";
 import type { LicitacaoComChecklist } from "@/lib/queries";
 import type { LicitacaoFase } from "@/lib/database.types";
-import { moneyCompact, daysUntil, deadlineLabel, fileSize } from "@/lib/format";
+import { moneyCompact, daysUntil, deadlineLabel } from "@/lib/format";
 import { StatusPill, cn } from "@/components/ui";
 import { CloseIcon } from "@/components/icons";
-import { createClient } from "@/lib/supabase/client";
+import { AnexosSection } from "@/components/anexos-section";
 import {
   createLicitacao,
   updateLicitacao,
@@ -14,13 +14,8 @@ import {
   addChecklistItem,
   toggleChecklistItem,
   removeChecklistItem,
-  registerArquivo,
-  removeArquivo,
-  getArquivoUrl,
   type ActionState,
 } from "@/app/(app)/licitacoes/actions";
-
-const BUCKET = "licitacao-arquivos";
 
 const FASES: { key: LicitacaoFase; label: string }[] = [
   { key: "em_analise", label: "Em análise" },
@@ -387,114 +382,14 @@ function EditalDrawer({
           </div>
         )}
 
-        {isEdit && edital && <ArquivosSection edital={edital} />}
-      </div>
-    </div>
-  );
-}
-
-function ArquivosSection({ edital }: { edital: LicitacaoComChecklist }) {
-  const [uploading, setUploading] = useState(false);
-  const [error, setError] = useState<string | null>(null);
-  const inputRef = useRef<HTMLInputElement>(null);
-
-  async function onPick(e: React.ChangeEvent<HTMLInputElement>) {
-    const file = e.target.files?.[0];
-    if (!file) return;
-    setError(null);
-    setUploading(true);
-    try {
-      if (file.size > 50 * 1024 * 1024) {
-        setError("Arquivo acima de 50 MB.");
-        return;
-      }
-      const supabase = createClient();
-      const ext = file.name.includes(".") ? file.name.split(".").pop() : "bin";
-      const caminho = `${edital.id}/${crypto.randomUUID()}.${ext}`;
-
-      const up = await supabase.storage
-        .from(BUCKET)
-        .upload(caminho, file, { contentType: file.type || undefined });
-      if (up.error) {
-        setError(up.error.message);
-        return;
-      }
-
-      const fd = new FormData();
-      fd.set("licitacao_id", edital.id);
-      fd.set("nome", file.name);
-      fd.set("caminho", caminho);
-      fd.set("tamanho", String(file.size));
-      fd.set("tipo", file.type);
-      const res = await registerArquivo(fd);
-      if (res.error) setError(res.error);
-    } catch {
-      setError("Falha no upload.");
-    } finally {
-      setUploading(false);
-      if (inputRef.current) inputRef.current.value = "";
-    }
-  }
-
-  async function download(caminho: string) {
-    const url = await getArquivoUrl(caminho);
-    if (url) window.open(url, "_blank", "noopener");
-  }
-
-  return (
-    <div className="mt-6 border-t border-border-soft pt-5">
-      <p className="mb-3 text-[12.5px] font-semibold">
-        Arquivos{" "}
-        <span className="text-text-muted">({edital.arquivos.length})</span>
-      </p>
-
-      <div className="space-y-1.5">
-        {edital.arquivos.map((a) => (
-          <div
-            key={a.id}
-            className="flex items-center gap-2 rounded-sm bg-panel-alt px-2.5 py-1.5"
-          >
-            <button
-              onClick={() => download(a.caminho)}
-              className="flex-1 truncate text-left text-[12px] text-teal hover:underline"
-              title={a.nome}
-            >
-              {a.nome}
-            </button>
-            <span className="shrink-0 text-[11px] text-text-muted">
-              {fileSize(a.tamanho)}
-            </span>
-            <form action={removeArquivo}>
-              <input type="hidden" name="id" value={a.id} />
-              <button
-                type="submit"
-                aria-label="Remover arquivo"
-                className="text-text-muted hover:text-risk"
-              >
-                <CloseIcon className="h-3 w-3" />
-              </button>
-            </form>
-          </div>
-        ))}
-        {edital.arquivos.length === 0 && (
-          <p className="text-[11.5px] text-text-muted">Nenhum arquivo anexado.</p>
+        {isEdit && edital && (
+          <AnexosSection
+            escopo="licitacao"
+            refId={edital.id}
+            anexos={edital.arquivos}
+          />
         )}
       </div>
-
-      <label className="mt-2.5 flex cursor-pointer items-center justify-center rounded-sm border border-dashed border-border px-3 py-2.5 text-[12px] text-text-secondary hover:border-text-muted hover:text-text-primary">
-        {uploading ? "Enviando…" : "+ Anexar arquivo do computador"}
-        <input
-          ref={inputRef}
-          type="file"
-          className="hidden"
-          disabled={uploading}
-          onChange={onPick}
-        />
-      </label>
-      {error && <p className="mt-1.5 text-[12px] text-risk">{error}</p>}
-      <p className="mt-1 text-[11px] text-text-muted">
-        PDF, Word, planilhas, imagens, zip — até 50 MB por arquivo.
-      </p>
     </div>
   );
 }

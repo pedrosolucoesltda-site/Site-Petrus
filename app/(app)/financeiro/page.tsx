@@ -6,51 +6,39 @@ import {
   somaJanela,
   custoVariacaoPct,
 } from "@/lib/queries";
+import { getAnexos, groupAnexos } from "@/lib/anexos";
 import {
   money,
   moneyCompact,
   percentDelta,
-  deadlineLabel,
   monthYear,
   longDate,
 } from "@/lib/format";
-import {
-  Card,
-  DatePill,
-  PageHeader,
-  Panel,
-  RowItem,
-  StatusPill,
-  DataTable,
-  LinkPill,
-} from "@/components/ui";
+import { Card, DatePill, PageHeader, Panel, DataTable } from "@/components/ui";
 import { LockIcon } from "@/components/icons";
+import { ContasPanel, FluxoEditor } from "@/components/financeiro-manager";
 
 export const metadata = { title: "Financeiro — Petrus Soluções" };
 
-const CONTA_TONE = {
-  vencido: "risk",
-  a_vencer: "alert",
-  pago: "positive",
-} as const;
-const CONTA_LABEL = {
-  vencido: "Vencido",
-  a_vencer: "A vencer",
-  pago: "Pago",
-} as const;
-
 export default async function FinanceiroPage() {
   await requireAdmin();
-  const { contasPagar, contasReceber, fluxo, obras } = await getFinanceiro();
+  const [{ contasPagar, contasReceber, fluxo, obras }, anexPagar, anexReceber] =
+    await Promise.all([
+      getFinanceiro(),
+      getAnexos("conta_pagar"),
+      getAnexos("conta_receber"),
+    ]);
+
+  const anexosPagar = Object.fromEntries(groupAnexos(anexPagar));
+  const anexosReceber = Object.fromEntries(groupAnexos(anexReceber));
+  const obrasRef = obras.map((o) => ({ id: o.id, nome: o.nome }));
 
   const saldo = saldoEmCaixa(fluxo);
   const delta = saldoDeltaPct(fluxo);
   const aReceber30 = somaJanela(contasReceber, 30);
   const aPagar30 = somaJanela(contasPagar, 30);
   const resultado = aReceber30 - aPagar30;
-  const pagarAbertas = contasPagar.filter((c) => c.status !== "pago");
-  const vencidas = pagarAbertas.filter((c) => c.status === "vencido").length;
-
+  const vencidas = contasPagar.filter((c) => c.status === "vencido").length;
   const maxBar = Math.max(1, ...fluxo.flatMap((f) => [f.entradas, f.saidas]));
 
   return (
@@ -117,7 +105,7 @@ export default async function FinanceiroPage() {
         <Panel
           title="Fluxo de caixa"
           action={
-            <div className="flex gap-3.5 text-[11.5px] text-text-muted">
+            <div className="flex items-center gap-3.5 text-[11.5px] text-text-muted">
               <span className="flex items-center gap-1.5">
                 <span className="h-2 w-2 rounded-[2px] bg-positive" />
                 Entradas
@@ -126,12 +114,13 @@ export default async function FinanceiroPage() {
                 <span className="h-2 w-2 rounded-[2px] bg-risk" />
                 Saídas
               </span>
+              <FluxoEditor />
             </div>
           }
         >
           {fluxo.length === 0 ? (
             <p className="py-8 text-[13px] text-text-muted">
-              Sem histórico de fluxo de caixa.
+              Sem histórico — use “editar meses”.
             </p>
           ) : (
             <>
@@ -168,33 +157,21 @@ export default async function FinanceiroPage() {
           )}
         </Panel>
 
-        <Panel
-          title="Contas a pagar"
-          action={<LinkPill href="/financeiro">ver todas</LinkPill>}
-        >
-          {pagarAbertas.length === 0 && (
-            <p className="py-6 text-[13px] text-text-muted">
-              Nenhuma conta em aberto.
-            </p>
-          )}
-          {pagarAbertas.slice(0, 6).map((c) => (
-            <RowItem
-              key={c.id}
-              title={c.fornecedor}
-              sub={deadlineLabel(c.vencimento)}
-              right={
-                <>
-                  <div className="tabular text-[13.5px] font-semibold">
-                    {money(c.valor)}
-                  </div>
-                  <StatusPill tone={CONTA_TONE[c.status]}>
-                    {CONTA_LABEL[c.status]}
-                  </StatusPill>
-                </>
-              }
-            />
-          ))}
-        </Panel>
+        <ContasPanel
+          tipo="pagar"
+          contas={contasPagar}
+          obras={obrasRef}
+          anexosByRef={anexosPagar}
+        />
+      </div>
+
+      <div className="mb-4">
+        <ContasPanel
+          tipo="receber"
+          contas={contasReceber}
+          obras={obrasRef}
+          anexosByRef={anexosReceber}
+        />
       </div>
 
       <Panel title="Custo por obra">

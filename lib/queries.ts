@@ -3,13 +3,13 @@ import { isSupabaseConfigured, isDemoMode } from "@/lib/env";
 import * as demo from "@/lib/demo-data";
 import { daysUntil } from "@/lib/format";
 import type {
+  Anexo,
   ContaPagar,
   ContaReceber,
   Documento,
   Fornecedor,
   FornecedorCompra,
   Licitacao,
-  LicitacaoArquivo,
   LicitacaoChecklist,
   Obra,
 } from "@/lib/database.types";
@@ -34,6 +34,14 @@ async function safe<T>(
 }
 
 /* ------------------------------------------------------------------ Obras */
+
+// Re-export das funções puras sobre Obra (definidas em lib/obras para
+// poderem ser usadas em client components sem arrastar o server client).
+export {
+  obraProgressTone,
+  custoVariacaoPct,
+  custoConsumoPct,
+} from "@/lib/obras";
 
 function byDateAsc<T>(items: T[], key: (t: T) => string | null): T[] {
   return [...items].sort((a, b) => {
@@ -61,41 +69,19 @@ export async function getObras(): Promise<Obra[]> {
   );
 }
 
-export function obraProgressTone(o: Obra) {
-  if (o.status === "atrasada") return "risk" as const;
-  if (o.status === "atencao") return "alert" as const;
-  return "positive" as const;
-}
-
-/**
- * Variação do custo realizado frente ao previsto **para o estágio atual**
- * (orçamento pró-rateado pelo progresso). Positivo = acima do previsto.
- */
-export function custoVariacaoPct(o: Obra): number {
-  const previsto = o.orcamento * (o.progresso_pct / 100);
-  if (!previsto) return 0;
-  return ((o.custo_realizado - previsto) / previsto) * 100;
-}
-
-/** Percentual do orçamento total já consumido. */
-export function custoConsumoPct(o: Obra): number {
-  if (!o.orcamento) return 0;
-  return (o.custo_realizado / o.orcamento) * 100;
-}
-
 /* ------------------------------------------------------------------ Licitações */
 
 export interface LicitacaoComChecklist extends Licitacao {
   checklist: LicitacaoChecklist[];
   docsEntregues: number;
   docsTotal: number;
-  arquivos: LicitacaoArquivo[];
+  arquivos: Anexo[];
 }
 
 function mapLicitacoes(
   lics: Licitacao[],
   checks: LicitacaoChecklist[],
-  arquivos: LicitacaoArquivo[] = [],
+  arquivos: Anexo[] = [],
 ): LicitacaoComChecklist[] {
   return lics.map((l) => {
     const checklist = checks.filter((c) => c.licitacao_id === l.id);
@@ -105,7 +91,7 @@ function mapLicitacoes(
       docsEntregues: checklist.filter((c) => c.entregue).length,
       docsTotal: checklist.length,
       arquivos: arquivos
-        .filter((a) => a.licitacao_id === l.id)
+        .filter((a) => a.ref_id === l.id)
         .sort((a, b) => (a.created_at < b.created_at ? 1 : -1)),
     };
   });
@@ -133,9 +119,9 @@ export async function getLicitacoes(): Promise<LicitacaoComChecklist[]> {
       () => supabase.from("licitacao_checklist").select("*"),
       "licitacao_checklist",
     ),
-    safe<LicitacaoArquivo>(
-      () => supabase.from("licitacao_arquivos").select("*"),
-      "licitacao_arquivos",
+    safe<Anexo>(
+      () => supabase.from("anexos").select("*").eq("escopo", "licitacao"),
+      "anexos-licitacao",
     ),
   ]);
 

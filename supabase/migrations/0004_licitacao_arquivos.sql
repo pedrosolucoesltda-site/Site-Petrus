@@ -1,5 +1,8 @@
 -- ============================================================
 -- Anexos de licitações — Supabase Storage + metadados
+-- OBS: SUPERSEDIDA pela 0005_anexos.sql, que generaliza os anexos
+-- para todos os módulos e remove a tabela licitacao_arquivos.
+-- Mantida por histórico das migrations.
 -- ============================================================
 
 -- bucket privado
