@@ -12,7 +12,7 @@ Supabase (Postgres, Auth, RLS) + assistentes de IA (API da Anthropic).
 | `/licitacoes`   | Licitações    | Todos (leitura + escrita)                |
 | `/financeiro`   | Financeiro    | **Somente administradores**              |
 | `/documentos`   | Documentos    | Todos leem; só admin edita/exclui        |
-| `/fornecedores` | Fornecedores  | Todos (leitura + escrita)                |
+| `/fornecedores` | Fornecedores  | Todos (cadastro, compras, anexos)        |
 | `/usuarios`     | Usuários      | **Somente administradores** (criar / promover / remover) |
 
 Barra fixa de **5 assistentes de IA** à direita em todas as telas
@@ -64,8 +64,10 @@ Aplique o schema (SQL Editor do dashboard, ou `supabase db push` com a CLI):
 1. `supabase/migrations/0001_schema.sql` — tabelas, enums, triggers, `is_admin()`
 2. `supabase/migrations/0002_rls.sql` — RLS de todos os módulos
 3. `supabase/migrations/0003_hardening.sql` — hardening (search_path, revoke RPC)
-4. `supabase/migrations/0004_licitacao_arquivos.sql` — bucket de Storage + anexos de editais
-5. `supabase/seed.sql` — dados de demonstração (opcional, extraídos dos protótipos)
+4. `supabase/migrations/0004_licitacao_arquivos.sql` — (supersedida pela 0005)
+5. `supabase/migrations/0005_anexos.sql` — anexos genéricos (bucket + tabela `anexos`)
+6. `supabase/migrations/0006_anexos_fornecedor.sql` + `0007_*` — escopo `fornecedor`
+7. `supabase/seed.sql` — dados de demonstração (opcional, extraídos dos protótipos)
 
 > Com a Supabase CLI: `supabase db reset` aplica migrations + seed de uma vez.
 

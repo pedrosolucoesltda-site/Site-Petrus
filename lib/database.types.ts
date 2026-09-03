@@ -68,6 +68,7 @@ export type AnexoEscopo =
   | "obra"
   | "licitacao"
   | "documento"
+  | "fornecedor"
   | "conta_pagar"
   | "conta_receber";
 

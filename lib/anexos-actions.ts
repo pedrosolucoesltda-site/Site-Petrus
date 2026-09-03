@@ -17,18 +17,13 @@ const PATHS: Record<AnexoEscopo, string> = {
   obra: "/obras",
   licitacao: "/licitacoes",
   documento: "/documentos",
+  fornecedor: "/fornecedores",
   conta_pagar: "/financeiro",
   conta_receber: "/financeiro",
 };
 
 function isEscopo(v: unknown): v is AnexoEscopo {
-  return (
-    v === "obra" ||
-    v === "licitacao" ||
-    v === "documento" ||
-    v === "conta_pagar" ||
-    v === "conta_receber"
-  );
+  return typeof v === "string" && v in PATHS;
 }
 
 async function guard(escopo: AnexoEscopo) {

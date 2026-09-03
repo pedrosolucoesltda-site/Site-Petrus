@@ -269,10 +269,15 @@ export async function getDocumentos(): Promise<DocumentoComStatus[]> {
 
 /* ------------------------------------------------------------------ Fornecedores */
 
+export interface CompraComObra extends FornecedorCompra {
+  obraNome: string | null;
+}
+
 export interface FornecedorComResumo extends Fornecedor {
   totalComprado: number;
   ultimaCompra: string | null;
   obrasVinculadas: string[];
+  compras: CompraComObra[];
 }
 
 function mapFornecedores(
@@ -283,23 +288,25 @@ function mapFornecedores(
   const obraMap = new Map(obras.map((o) => [o.id, o.nome]));
 
   return forns.map((f) => {
-    const cs = compras.filter((c) => c.fornecedor_id === f.id);
+    const cs: CompraComObra[] = compras
+      .filter((c) => c.fornecedor_id === f.id)
+      .map((c) => ({
+        ...c,
+        obraNome: c.obra_id ? (obraMap.get(c.obra_id) ?? null) : null,
+      }))
+      .sort((a, b) => (a.data < b.data ? 1 : -1));
+
     const obrasVinculadas = [
       ...new Set(
-        cs
-          .map((c) => (c.obra_id ? obraMap.get(c.obra_id) : null))
-          .filter((n): n is string => Boolean(n)),
+        cs.map((c) => c.obraNome).filter((n): n is string => Boolean(n)),
       ),
     ];
-    const ultimaCompra =
-      cs.length > 0
-        ? cs.map((c) => c.data).sort().at(-1) ?? null
-        : null;
     return {
       ...f,
       totalComprado: cs.reduce((acc, c) => acc + c.valor, 0),
-      ultimaCompra,
+      ultimaCompra: cs.length > 0 ? (cs[0].data ?? null) : null,
       obrasVinculadas,
+      compras: cs,
     };
   });
 }
