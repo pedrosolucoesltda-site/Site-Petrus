@@ -1,6 +1,6 @@
 import { redirect } from "next/navigation";
 import { isDemoMode } from "@/lib/env";
-import { getSession } from "@/lib/auth";
+import { getSession, getAAL } from "@/lib/auth";
 import { LeftNav } from "@/components/left-nav";
 import { AssistantRail } from "@/components/assistant-rail";
 
@@ -14,6 +14,11 @@ export default async function AppLayout({
 }) {
   const session = await getSession();
   if (!session) redirect("/login");
+
+  // 2FA obrigatório: quem não passou pelo segundo fator vai para /2fa
+  // (que decide entre cadastrar o app autenticador ou pedir o código).
+  const { level } = await getAAL();
+  if (level !== "aal2") redirect("/2fa");
 
   const userLabel =
     session.profile?.full_name || session.user.email || "Usuário";

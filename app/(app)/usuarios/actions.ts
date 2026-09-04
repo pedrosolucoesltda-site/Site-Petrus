@@ -82,3 +82,20 @@ export async function deleteUserAction(formData: FormData): Promise<void> {
   await admin.auth.admin.deleteUser(userId);
   revalidatePath("/usuarios");
 }
+
+/** Remove o 2FA de um usuário (ex.: perdeu o celular). No próximo login ele
+ *  cadastra um novo app autenticador. */
+export async function reset2FAAction(formData: FormData): Promise<void> {
+  await requireAdmin();
+  const admin = createAdminClient();
+  if (!admin) return;
+
+  const userId = String(formData.get("user_id") ?? "");
+  if (!userId) return;
+
+  const { data } = await admin.auth.admin.mfa.listFactors({ userId });
+  for (const f of data?.factors ?? []) {
+    await admin.auth.admin.mfa.deleteFactor({ userId, id: f.id });
+  }
+  revalidatePath("/usuarios");
+}

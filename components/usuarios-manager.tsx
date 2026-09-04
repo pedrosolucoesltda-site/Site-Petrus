@@ -6,6 +6,7 @@ import {
   createUserAction,
   setRoleAction,
   deleteUserAction,
+  reset2FAAction,
   type ActionState,
 } from "@/app/(app)/usuarios/actions";
 import {
@@ -168,6 +169,16 @@ function UserRow({ u, isSelf }: { u: ManagedUser; isSelf: boolean }) {
       </td>
       <td className="text-right">
         <div className="inline-flex items-center gap-2">
+          <form action={reset2FAAction}>
+            <input type="hidden" name="user_id" value={u.id} />
+            <button
+              type="submit"
+              title="Remove o 2FA — o usuário cadastra um novo app no próximo login"
+              className="rounded-sm border border-border px-2.5 py-1 text-[11.5px] text-text-secondary hover:text-text-primary"
+            >
+              Resetar 2FA
+            </button>
+          </form>
           {!isSelf && (
             <form action={setRoleAction}>
               <input type="hidden" name="user_id" value={u.id} />

@@ -51,6 +51,32 @@ export async function getSession(): Promise<SessionInfo | null> {
   }
 }
 
+/**
+ * Nível de garantia da autenticação (AAL).
+ * - "aal2"  → passou pelo segundo fator (2FA)
+ * - "aal1"  → só e-mail/senha; precisa completar o 2FA
+ * `hasFactor` diz se o usuário já cadastrou um app autenticador verificado.
+ */
+export async function getAAL(): Promise<{
+  level: "aal1" | "aal2";
+  hasFactor: boolean;
+}> {
+  if (isDemoMode || !isSupabaseConfigured)
+    return { level: "aal2", hasFactor: true };
+  try {
+    const supabase = await createClient();
+    const { data } = await supabase.auth.mfa.getAuthenticatorAssuranceLevel();
+    return {
+      level: data?.currentLevel === "aal2" ? "aal2" : "aal1",
+      hasFactor: data?.nextLevel === "aal2",
+    };
+  } catch (e) {
+    console.error("[auth:getAAL]", e);
+    // fail-open: um erro transitório no endpoint de MFA não deve travar o acesso
+    return { level: "aal2", hasFactor: true };
+  }
+}
+
 /** Use in a Server Component that requires any authenticated user. */
 export async function requireSession(): Promise<SessionInfo> {
   const session = await getSession();
