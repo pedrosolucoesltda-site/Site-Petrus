@@ -18,7 +18,7 @@ const CATEGORIA_LABEL: Record<DocumentoCategoria, string> = {
   contratos: "Contratos",
   certidoes: "Certidões",
   arts_rrts: "ARTs / RRTs",
-  societario: "Societário",
+  societario: "Documento dos Sócios",
   obras: "Obras",
   licitacoes: "Licitações",
 };
