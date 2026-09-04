@@ -51,26 +51,29 @@ export function dataDisputa(l: Licitacao): string | null {
 export interface Countdown {
   label: string;
   tone: Tone;
+  /** true = mostrar o ícone de relógio (rótulo baseado em tempo) */
+  clock: boolean;
 }
 
 /** Rótulo do "relógio" da coluna DATA. */
 export function countdown(l: Licitacao): Countdown {
   if (l.status === "resultado") {
     return l.resultado === "vencedor"
-      ? { label: "Vencedor", tone: "positive" }
+      ? { label: "Vencedor", tone: "positive", clock: false }
       : l.resultado === "perdido"
-        ? { label: "Perdido", tone: "risk" }
-        : { label: "Encerrada", tone: "muted" };
+        ? { label: "Perdido", tone: "risk", clock: false }
+        : { label: "Encerrada", tone: "muted", clock: false };
   }
   const iso = dataDisputa(l);
-  if (!iso) return { label: "—", tone: "muted" };
+  if (!iso) return { label: "—", tone: "muted", clock: false };
 
   const alvo = new Date(iso).getTime();
   const agora = Date.now();
   const diffH = (alvo - agora) / 3_600_000;
 
-  if (diffH <= 0) return { label: "Encerrada", tone: "risk" };
-  if (diffH < 24) return { label: `${Math.ceil(diffH)}h`, tone: "risk" };
+  if (diffH <= 0) return { label: "Encerrada", tone: "muted", clock: true };
+  if (diffH < 24)
+    return { label: `${Math.ceil(diffH)}h`, tone: "risk", clock: true };
   const dias = Math.ceil(diffH / 24);
   if (dias <= 2) {
     const hoje = new Date();
@@ -78,9 +81,9 @@ export function countdown(l: Licitacao): Countdown {
     const alvoDia = new Date(iso);
     alvoDia.setHours(0, 0, 0, 0);
     if (alvoDia.getTime() === hoje.getTime())
-      return { label: "Aberta", tone: "positive" };
+      return { label: "Aberta", tone: "positive", clock: true };
   }
-  return { label: `${dias}d`, tone: dias <= 7 ? "alert" : "muted" };
+  return { label: `${dias}d`, tone: dias <= 7 ? "alert" : "muted", clock: true };
 }
 
 export function isCritica(l: Licitacao): boolean {

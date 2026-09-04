@@ -12,9 +12,10 @@ import {
   countdown,
   dataDisputa,
   isCritica,
+  type Countdown,
 } from "@/lib/licitacoes";
 import { Card, StatusPill, cn } from "@/components/ui";
-import { CloseIcon, SearchIcon } from "@/components/icons";
+import { CloseIcon, SearchIcon, ClockIcon } from "@/components/icons";
 import { AnexosSection } from "@/components/anexos-section";
 import {
   createLicitacao,
@@ -214,8 +215,8 @@ export function LicitacoesTable({ lics }: { lics: LicitacaoComChecklist[] }) {
                     )}
                   </td>
                   <td>
-                    <StatusPill tone={cd.tone}>{cd.label}</StatusPill>
-                    <div className="mt-1 text-[11px] text-text-muted">
+                    <PrazoBadge cd={cd} />
+                    <div className="mt-1 whitespace-nowrap text-[11px] text-text-muted">
                       {dateTime(dataDisputa(l))}
                     </div>
                   </td>
@@ -275,6 +276,30 @@ function Kpi({
       </p>
       {hint && <p className="mt-1.5 text-[11.5px] text-text-muted">{hint}</p>}
     </Card>
+  );
+}
+
+const PRAZO_TONE: Record<Countdown["tone"], string> = {
+  risk: "bg-risk/20 text-risk",
+  alert: "bg-alert/20 text-alert",
+  positive: "bg-positive/15 text-positive",
+  muted: "bg-panel-alt text-text-secondary",
+  teal: "bg-teal/15 text-teal",
+  blue: "bg-blue/15 text-blue",
+};
+
+/** Selo da coluna DATA: relógio + contagem ("8h", "4d", "12d"). */
+function PrazoBadge({ cd }: { cd: Countdown }) {
+  return (
+    <span
+      className={cn(
+        "inline-flex items-center gap-1 whitespace-nowrap rounded-full px-2 py-[3px] text-[11px] font-semibold",
+        PRAZO_TONE[cd.tone],
+      )}
+    >
+      {cd.clock && <ClockIcon className="h-3 w-3" />}
+      {cd.label}
+    </span>
   );
 }
 
