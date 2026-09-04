@@ -5,7 +5,7 @@ import type { Anexo, Obra, ObraStatus } from "@/lib/database.types";
 import { custoVariacaoPct, obraProgressTone } from "@/lib/obras";
 import { monthYear, percentDelta, initials } from "@/lib/format";
 import { Card, ProgressBar, StatusPill } from "@/components/ui";
-import { CloseIcon } from "@/components/icons";
+import { Drawer } from "@/components/drawer";
 import { AnexosSection } from "@/components/anexos-section";
 import {
   createObra,
@@ -132,18 +132,12 @@ export function ObrasManager({
       )}
 
       {mode !== null && (
-        <>
-          <div
-            className="fixed inset-0 z-40 bg-black/40"
-            onClick={() => setMode(null)}
-          />
-          <ObraDrawer
-            key={selected?.id ?? "new"}
-            obra={selected}
-            anexos={selected ? (anexosByRef[selected.id] ?? []) : []}
-            onClose={() => setMode(null)}
-          />
-        </>
+        <ObraDrawer
+          key={selected?.id ?? "new"}
+          obra={selected}
+          anexos={selected ? (anexosByRef[selected.id] ?? []) : []}
+          onClose={() => setMode(null)}
+        />
       )}
     </>
   );
@@ -163,28 +157,25 @@ function ObraDrawer({
     isEdit ? updateObra : createObra,
     {},
   );
+  const [dirty, setDirty] = useState(false);
 
   useEffect(() => {
     if (state.ok) onClose();
   }, [state.ok, onClose]);
 
   return (
-    <div className="fixed inset-y-0 right-0 z-50 flex w-full max-w-[440px] flex-col border-l border-border bg-panel shadow-2xl">
-      <header className="flex items-center justify-between border-b border-border-soft p-4">
-        <p className="text-[13px] font-semibold">
-          {isEdit ? "Editar obra" : "Nova obra"}
-        </p>
-        <button
-          onClick={onClose}
-          aria-label="Fechar"
-          className="text-text-muted hover:text-text-primary"
+    <Drawer
+      open
+      onClose={onClose}
+      dirty={dirty}
+      title={isEdit ? "Editar obra" : "Nova obra"}
+    >
+      <>
+        <form
+          action={formAction}
+          onChange={() => setDirty(true)}
+          className="space-y-3"
         >
-          <CloseIcon className="h-4 w-4" />
-        </button>
-      </header>
-
-      <div className="flex-1 overflow-y-auto p-4">
-        <form action={formAction} className="space-y-3">
           {isEdit && <input type="hidden" name="id" value={obra!.id} />}
 
           <label className="block text-[12px] text-text-secondary">
@@ -294,7 +285,7 @@ function ObraDrawer({
         {isEdit && obra && (
           <AnexosSection escopo="obra" refId={obra.id} anexos={anexos} />
         )}
-      </div>
-    </div>
+      </>
+    </Drawer>
   );
 }

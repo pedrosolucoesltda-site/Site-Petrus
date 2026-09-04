@@ -6,6 +6,7 @@ import type { FornecedorComResumo } from "@/lib/queries";
 import { money, shortDate, initials } from "@/lib/format";
 import { Panel, Tag, StarRating, DataTable } from "@/components/ui";
 import { CloseIcon, SearchIcon } from "@/components/icons";
+import { Drawer } from "@/components/drawer";
 import { AnexosSection } from "@/components/anexos-section";
 import {
   saveFornecedor,
@@ -152,19 +153,13 @@ export function FornecedoresManager({
       )}
 
       {mode !== null && (
-        <>
-          <div
-            className="fixed inset-0 z-40 bg-black/40"
-            onClick={() => setMode(null)}
-          />
-          <FornecedorDrawer
-            key={selected?.id ?? "new"}
-            fornecedor={selected}
-            obras={obras}
-            anexos={selected ? (anexosByRef[selected.id] ?? []) : []}
-            onClose={() => setMode(null)}
-          />
-        </>
+        <FornecedorDrawer
+          key={selected?.id ?? "new"}
+          fornecedor={selected}
+          obras={obras}
+          anexos={selected ? (anexosByRef[selected.id] ?? []) : []}
+          onClose={() => setMode(null)}
+        />
       )}
     </Panel>
   );
@@ -186,28 +181,25 @@ function FornecedorDrawer({
     saveFornecedor,
     {},
   );
+  const [dirty, setDirty] = useState(false);
 
   useEffect(() => {
     if (state.ok) onClose();
   }, [state.ok, onClose]);
 
   return (
-    <div className="fixed inset-y-0 right-0 z-50 flex w-full max-w-[440px] flex-col border-l border-border bg-panel shadow-2xl">
-      <header className="flex items-center justify-between border-b border-border-soft p-4">
-        <p className="text-[13px] font-semibold">
-          {isEdit ? "Editar fornecedor" : "Novo fornecedor"}
-        </p>
-        <button
-          onClick={onClose}
-          aria-label="Fechar"
-          className="text-text-muted hover:text-text-primary"
+    <Drawer
+      open
+      onClose={onClose}
+      dirty={dirty}
+      title={isEdit ? "Editar fornecedor" : "Novo fornecedor"}
+    >
+      <>
+        <form
+          action={formAction}
+          onChange={() => setDirty(true)}
+          className="space-y-3"
         >
-          <CloseIcon className="h-4 w-4" />
-        </button>
-      </header>
-
-      <div className="flex-1 overflow-y-auto p-4">
-        <form action={formAction} className="space-y-3">
           {isEdit && <input type="hidden" name="id" value={fornecedor!.id} />}
           <label className="block text-[12px] text-text-secondary">
             Nome
@@ -372,7 +364,7 @@ function FornecedorDrawer({
             />
           </>
         )}
-      </div>
-    </div>
+      </>
+    </Drawer>
   );
 }

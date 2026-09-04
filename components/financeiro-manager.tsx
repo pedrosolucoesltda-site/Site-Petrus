@@ -4,7 +4,7 @@ import { useActionState, useEffect, useState } from "react";
 import type { Anexo, ContaPagar, ContaReceber } from "@/lib/database.types";
 import { money, deadlineLabel } from "@/lib/format";
 import { Panel, RowItem, StatusPill } from "@/components/ui";
-import { CloseIcon } from "@/components/icons";
+import { Drawer } from "@/components/drawer";
 import { AnexosSection } from "@/components/anexos-section";
 import {
   saveContaPagar,
@@ -110,22 +110,16 @@ export function ContasPanel({
       )}
 
       {mode !== null && (
-        <>
-          <div
-            className="fixed inset-0 z-40 bg-black/40"
-            onClick={() => setMode(null)}
-          />
-          <ContaDrawer
-            key={selected?.id ?? "new"}
-            tipo={tipo}
-            conta={selected}
-            obras={obras}
-            escopo={escopo}
-            tabela={tabela}
-            anexos={selected ? (anexosByRef[selected.id] ?? []) : []}
-            onClose={() => setMode(null)}
-          />
-        </>
+        <ContaDrawer
+          key={selected?.id ?? "new"}
+          tipo={tipo}
+          conta={selected}
+          obras={obras}
+          escopo={escopo}
+          tabela={tabela}
+          anexos={selected ? (anexosByRef[selected.id] ?? []) : []}
+          onClose={() => setMode(null)}
+        />
       )}
     </Panel>
   );
@@ -155,29 +149,27 @@ function ContaDrawer({
     action,
     {},
   );
+  const [dirty, setDirty] = useState(false);
 
   useEffect(() => {
     if (state.ok) onClose();
   }, [state.ok, onClose]);
 
   return (
-    <div className="fixed inset-y-0 right-0 z-50 flex w-full max-w-[440px] flex-col border-l border-border bg-panel shadow-2xl">
-      <header className="flex items-center justify-between border-b border-border-soft p-4">
-        <p className="text-[13px] font-semibold">
-          {isEdit ? "Editar conta" : "Nova conta"} —{" "}
-          {tipo === "pagar" ? "a pagar" : "a receber"}
-        </p>
-        <button
-          onClick={onClose}
-          aria-label="Fechar"
-          className="text-text-muted hover:text-text-primary"
+    <Drawer
+      open
+      onClose={onClose}
+      dirty={dirty}
+      title={`${isEdit ? "Editar conta" : "Nova conta"} — ${
+        tipo === "pagar" ? "a pagar" : "a receber"
+      }`}
+    >
+      <>
+        <form
+          action={formAction}
+          onChange={() => setDirty(true)}
+          className="space-y-3"
         >
-          <CloseIcon className="h-4 w-4" />
-        </button>
-      </header>
-
-      <div className="flex-1 overflow-y-auto p-4">
-        <form action={formAction} className="space-y-3">
           {isEdit && <input type="hidden" name="id" value={conta!.id} />}
 
           {tipo === "pagar" ? (
@@ -289,8 +281,8 @@ function ContaDrawer({
         {isEdit && conta && (
           <AnexosSection escopo={escopo} refId={conta.id} anexos={anexos} />
         )}
-      </div>
-    </div>
+      </>
+    </Drawer>
   );
 }
 

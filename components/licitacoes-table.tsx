@@ -21,6 +21,7 @@ import {
 } from "@/lib/licitacoes";
 import { Card, StatusPill, cn } from "@/components/ui";
 import { CloseIcon, SearchIcon, ClockIcon } from "@/components/icons";
+import { Drawer } from "@/components/drawer";
 import { AnexosSection } from "@/components/anexos-section";
 import {
   createLicitacao,
@@ -238,17 +239,11 @@ export function LicitacoesTable({ lics }: { lics: LicitacaoComChecklist[] }) {
       </div>
 
       {mode !== null && (
-        <>
-          <div
-            className="fixed inset-0 z-40 bg-black/40"
-            onClick={() => setMode(null)}
-          />
-          <LicitacaoDrawer
-            key={selected?.id ?? "new"}
-            lic={selected}
-            onClose={() => setMode(null)}
-          />
-        </>
+        <LicitacaoDrawer
+          key={selected?.id ?? "new"}
+          lic={selected}
+          onClose={() => setMode(null)}
+        />
       )}
     </>
   );
@@ -323,6 +318,7 @@ function LicitacaoDrawer({
     {},
   );
   const [status, setStatus] = useState<LicitacaoStatus>(lic?.status ?? "aberta");
+  const [dirty, setDirty] = useState(false);
 
   useEffect(() => {
     if (state.ok) onClose();
@@ -335,22 +331,19 @@ function LicitacaoDrawer({
       : "";
 
   return (
-    <div className="fixed inset-y-0 right-0 z-50 flex w-full max-w-[460px] flex-col border-l border-border bg-panel shadow-2xl">
-      <header className="flex items-center justify-between border-b border-border-soft p-4">
-        <p className="text-[13px] font-semibold">
-          {isEdit ? "Editar licitação" : "Nova licitação"}
-        </p>
-        <button
-          onClick={onClose}
-          aria-label="Fechar"
-          className="text-text-muted hover:text-text-primary"
+    <Drawer
+      open
+      onClose={onClose}
+      dirty={dirty}
+      width="max-w-[460px]"
+      title={isEdit ? "Editar licitação" : "Nova licitação"}
+    >
+      <>
+        <form
+          action={formAction}
+          onChange={() => setDirty(true)}
+          className="space-y-3"
         >
-          <CloseIcon className="h-4 w-4" />
-        </button>
-      </header>
-
-      <div className="flex-1 overflow-y-auto p-4">
-        <form action={formAction} className="space-y-3">
           {isEdit && <input type="hidden" name="id" value={lic!.id} />}
 
           <div className="grid grid-cols-2 gap-3">
@@ -605,7 +598,7 @@ function LicitacaoDrawer({
             />
           </>
         )}
-      </div>
-    </div>
+      </>
+    </Drawer>
   );
 }
