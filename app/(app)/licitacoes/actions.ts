@@ -3,6 +3,8 @@
 import { revalidatePath } from "next/cache";
 import { requireSession } from "@/lib/auth";
 import { createClient } from "@/lib/supabase/server";
+import { registrarAtividade } from "@/lib/atividades";
+import { STATUS_LABEL } from "@/lib/licitacoes";
 import type {
   LicitacaoModalidade,
   LicitacaoResultado,
@@ -69,19 +71,35 @@ function fieldsFromForm(formData: FormData) {
   };
 }
 
+const labelDe = (orgao: string, objeto: string) =>
+  `${orgao} — ${objeto}`.slice(0, 120);
+
 export async function createLicitacao(
   _prev: ActionState,
   formData: FormData,
 ): Promise<ActionState> {
-  await requireSession();
+  const session = await requireSession();
   const f = fieldsFromForm(formData);
   if (!f.orgao || !f.objeto) return { error: "Órgão e objeto são obrigatórios." };
 
   const supabase = await createClient();
-  const { error } = await supabase.from("licitacoes").insert(f);
+  const { data, error } = await supabase
+    .from("licitacoes")
+    .insert(f)
+    .select("id")
+    .single();
   if (error) return { error: error.message };
+
+  await registrarAtividade(supabase, session, {
+    licitacaoId: data?.id ?? null,
+    label: labelDe(f.orgao, f.objeto),
+    acao: "criou",
+    descricao: `cadastrou a licitação (${STATUS_LABEL[f.status]})`,
+  });
+
   revalidatePath("/licitacoes");
   revalidatePath("/painel");
+  revalidatePath("/configuracoes/atividades");
   return { ok: true };
 }
 
@@ -89,49 +107,129 @@ export async function updateLicitacao(
   _prev: ActionState,
   formData: FormData,
 ): Promise<ActionState> {
-  await requireSession();
+  const session = await requireSession();
   const id = String(formData.get("id") ?? "");
   if (!id) return { error: "Licitação não identificada." };
   const f = fieldsFromForm(formData);
   if (!f.orgao || !f.objeto) return { error: "Órgão e objeto são obrigatórios." };
 
   const supabase = await createClient();
+  const { data: antes } = await supabase
+    .from("licitacoes")
+    .select("status, resultado")
+    .eq("id", id)
+    .maybeSingle();
+
   const { error } = await supabase.from("licitacoes").update(f).eq("id", id);
   if (error) return { error: error.message };
+
+  const label = labelDe(f.orgao, f.objeto);
+  if (antes && antes.status !== f.status) {
+    await registrarAtividade(supabase, session, {
+      licitacaoId: id,
+      label,
+      acao: "moveu",
+      descricao: `mudou o status de "${STATUS_LABEL[antes.status as LicitacaoStatus]}" para "${STATUS_LABEL[f.status]}"`,
+    });
+  } else if (
+    f.status === "resultado" &&
+    f.resultado &&
+    antes?.resultado !== f.resultado
+  ) {
+    await registrarAtividade(supabase, session, {
+      licitacaoId: id,
+      label,
+      acao: "resultado",
+      descricao: `registrou o resultado: ${f.resultado === "vencedor" ? "VENCEDOR" : "perdido"}`,
+    });
+  } else {
+    await registrarAtividade(supabase, session, {
+      licitacaoId: id,
+      label,
+      acao: "editou",
+      descricao: "editou os dados da licitação",
+    });
+  }
+
   revalidatePath("/licitacoes");
   revalidatePath("/painel");
+  revalidatePath("/configuracoes/atividades");
   return { ok: true };
 }
 
 /** Mudança rápida de status a partir da tabela. */
 export async function setLicitacaoStatus(formData: FormData): Promise<void> {
-  await requireSession();
+  const session = await requireSession();
   const id = String(formData.get("id") ?? "");
   const status = String(formData.get("status") ?? "") as LicitacaoStatus;
   if (!id || !STATUSES.includes(status)) return;
+
   const supabase = await createClient();
+  const { data: lic } = await supabase
+    .from("licitacoes")
+    .select("orgao, objeto, status")
+    .eq("id", id)
+    .maybeSingle();
+
   await supabase
     .from("licitacoes")
     .update({ status, resultado: status === "resultado" ? undefined : null })
     .eq("id", id);
+
+  if (lic) {
+    await registrarAtividade(supabase, session, {
+      licitacaoId: id,
+      label: labelDe(lic.orgao, lic.objeto),
+      acao: "moveu",
+      descricao: `mudou o status de "${STATUS_LABEL[lic.status as LicitacaoStatus]}" para "${STATUS_LABEL[status]}"`,
+    });
+  }
   revalidatePath("/licitacoes");
   revalidatePath("/painel");
+  revalidatePath("/configuracoes/atividades");
 }
 
 export async function deleteLicitacao(formData: FormData): Promise<void> {
-  await requireSession();
+  const session = await requireSession();
   const id = String(formData.get("id") ?? "");
   if (!id) return;
+
   const supabase = await createClient();
+  const { data: lic } = await supabase
+    .from("licitacoes")
+    .select("orgao, objeto")
+    .eq("id", id)
+    .maybeSingle();
+
   await supabase.from("licitacoes").delete().eq("id", id);
+
+  await registrarAtividade(supabase, session, {
+    licitacaoId: null,
+    label: lic ? labelDe(lic.orgao, lic.objeto) : "licitação removida",
+    acao: "excluiu",
+    descricao: "excluiu a licitação",
+  });
   revalidatePath("/licitacoes");
   revalidatePath("/painel");
+  revalidatePath("/configuracoes/atividades");
 }
 
 /* ---------------- checklist ---------------- */
 
+async function labelLicitacao(
+  supabase: Awaited<ReturnType<typeof createClient>>,
+  licitacaoId: string,
+): Promise<string> {
+  const { data } = await supabase
+    .from("licitacoes")
+    .select("orgao, objeto")
+    .eq("id", licitacaoId)
+    .maybeSingle();
+  return data ? labelDe(data.orgao, data.objeto) : "licitação";
+}
+
 export async function addChecklistItem(formData: FormData): Promise<void> {
-  await requireSession();
+  const session = await requireSession();
   const licitacao_id = String(formData.get("licitacao_id") ?? "");
   const documento_exigido = String(formData.get("documento_exigido") ?? "").trim();
   if (!licitacao_id || !documento_exigido) return;
@@ -139,24 +237,64 @@ export async function addChecklistItem(formData: FormData): Promise<void> {
   await supabase
     .from("licitacao_checklist")
     .insert({ licitacao_id, documento_exigido, entregue: false });
+
+  await registrarAtividade(supabase, session, {
+    licitacaoId: licitacao_id,
+    label: await labelLicitacao(supabase, licitacao_id),
+    acao: "checklist",
+    descricao: `adicionou "${documento_exigido}" ao checklist`,
+  });
   revalidatePath("/licitacoes");
+  revalidatePath("/configuracoes/atividades");
 }
 
 export async function toggleChecklistItem(formData: FormData): Promise<void> {
-  await requireSession();
+  const session = await requireSession();
   const id = String(formData.get("id") ?? "");
   const entregue = String(formData.get("entregue") ?? "") === "true";
   if (!id) return;
   const supabase = await createClient();
+  const { data: item } = await supabase
+    .from("licitacao_checklist")
+    .select("documento_exigido, licitacao_id")
+    .eq("id", id)
+    .maybeSingle();
+
   await supabase.from("licitacao_checklist").update({ entregue }).eq("id", id);
+
+  if (item) {
+    await registrarAtividade(supabase, session, {
+      licitacaoId: item.licitacao_id,
+      label: await labelLicitacao(supabase, item.licitacao_id),
+      acao: "checklist",
+      descricao: `${entregue ? "marcou" : "desmarcou"} "${item.documento_exigido}" no checklist`,
+    });
+  }
   revalidatePath("/licitacoes");
+  revalidatePath("/configuracoes/atividades");
 }
 
 export async function removeChecklistItem(formData: FormData): Promise<void> {
-  await requireSession();
+  const session = await requireSession();
   const id = String(formData.get("id") ?? "");
   if (!id) return;
   const supabase = await createClient();
+  const { data: item } = await supabase
+    .from("licitacao_checklist")
+    .select("documento_exigido, licitacao_id")
+    .eq("id", id)
+    .maybeSingle();
+
   await supabase.from("licitacao_checklist").delete().eq("id", id);
+
+  if (item) {
+    await registrarAtividade(supabase, session, {
+      licitacaoId: item.licitacao_id,
+      label: await labelLicitacao(supabase, item.licitacao_id),
+      acao: "checklist",
+      descricao: `removeu "${item.documento_exigido}" do checklist`,
+    });
+  }
   revalidatePath("/licitacoes");
+  revalidatePath("/configuracoes/atividades");
 }

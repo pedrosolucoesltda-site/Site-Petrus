@@ -10,6 +10,7 @@ import type {
   Fornecedor,
   FornecedorCompra,
   Licitacao,
+  LicitacaoAtividade,
   LicitacaoChecklist,
   Obra,
 } from "@/lib/database.types";
@@ -126,6 +127,20 @@ export async function getLicitacoes(): Promise<LicitacaoComChecklist[]> {
   ]);
 
   return mapLicitacoes(lics, checks, arquivos);
+}
+
+/** Linha do tempo — últimas alterações em Licitações. */
+export async function getAtividades(limit = 200): Promise<LicitacaoAtividade[]> {
+  const supabase = await createClient();
+  return safe<LicitacaoAtividade>(
+    () =>
+      supabase
+        .from("licitacao_atividades")
+        .select("*")
+        .order("created_at", { ascending: false })
+        .limit(limit),
+    "licitacao_atividades",
+  );
 }
 
 /* ------------------------------------------------------------------ Financeiro */

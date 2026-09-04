@@ -4,7 +4,10 @@ import Link from "next/link";
 import { usePathname } from "next/navigation";
 import { cn } from "@/components/ui";
 
-const TABS = [{ href: "/configuracoes/usuarios", label: "Usuários" }];
+const TABS = [
+  { href: "/configuracoes/usuarios", label: "Usuários" },
+  { href: "/configuracoes/atividades", label: "Linha do tempo" },
+];
 
 export function ConfigTabs() {
   const pathname = usePathname();

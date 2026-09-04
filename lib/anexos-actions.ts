@@ -1,8 +1,9 @@
 "use server";
 
 import { revalidatePath } from "next/cache";
-import { requireSession, requireAdmin } from "@/lib/auth";
+import { requireSession, requireAdmin, type SessionInfo } from "@/lib/auth";
 import { createClient } from "@/lib/supabase/server";
+import { registrarAtividade } from "@/lib/atividades";
 import type { AnexoEscopo } from "@/lib/database.types";
 
 export interface AnexoState {
@@ -30,6 +31,29 @@ async function guard(escopo: AnexoEscopo) {
   return FINANCEIRO.includes(escopo)
     ? await requireAdmin()
     : await requireSession();
+}
+
+/** Loga na linha do tempo quando o anexo é de uma licitação. */
+async function logSeLicitacao(
+  supabase: Awaited<ReturnType<typeof createClient>>,
+  session: SessionInfo,
+  escopo: AnexoEscopo,
+  refId: string,
+  descricao: string,
+) {
+  if (escopo !== "licitacao") return;
+  const { data } = await supabase
+    .from("licitacoes")
+    .select("orgao, objeto")
+    .eq("id", refId)
+    .maybeSingle();
+  await registrarAtividade(supabase, session, {
+    licitacaoId: refId,
+    label: data ? `${data.orgao} — ${data.objeto}`.slice(0, 120) : "licitação",
+    acao: "anexo",
+    descricao,
+  });
+  revalidatePath("/configuracoes/atividades");
 }
 
 /** Registra o metadado de um arquivo já enviado ao Storage pelo cliente. */
@@ -60,6 +84,13 @@ export async function registerAnexo(formData: FormData): Promise<AnexoState> {
     await supabase.storage.from(BUCKET).remove([caminho]);
     return { error: error.message };
   }
+  await logSeLicitacao(
+    supabase,
+    session,
+    escopo,
+    ref_id,
+    `anexou o arquivo "${nome}"`,
+  );
   revalidatePath(PATHS[escopo]);
   return { ok: true };
 }
@@ -67,7 +98,7 @@ export async function registerAnexo(formData: FormData): Promise<AnexoState> {
 export async function removeAnexo(formData: FormData): Promise<void> {
   const escopo = formData.get("escopo");
   if (!isEscopo(escopo)) return;
-  await guard(escopo);
+  const session = await guard(escopo);
 
   const id = String(formData.get("id") ?? "");
   if (!id) return;
@@ -75,11 +106,20 @@ export async function removeAnexo(formData: FormData): Promise<void> {
 
   const { data } = await supabase
     .from("anexos")
-    .select("caminho")
+    .select("caminho, ref_id, nome")
     .eq("id", id)
     .maybeSingle();
   if (data?.caminho) await supabase.storage.from(BUCKET).remove([data.caminho]);
   await supabase.from("anexos").delete().eq("id", id);
+  if (data?.ref_id) {
+    await logSeLicitacao(
+      supabase,
+      session,
+      escopo,
+      data.ref_id,
+      `removeu o arquivo "${data.nome ?? ""}"`,
+    );
+  }
   revalidatePath(PATHS[escopo]);
 }
 
