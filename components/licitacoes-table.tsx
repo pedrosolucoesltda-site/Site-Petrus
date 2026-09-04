@@ -293,11 +293,11 @@ function PrazoBadge({ cd }: { cd: Countdown }) {
   return (
     <span
       className={cn(
-        "inline-flex items-center gap-1 whitespace-nowrap rounded-full px-2 py-[3px] text-[11px] font-semibold",
+        "inline-flex items-center gap-1.5 whitespace-nowrap rounded-full px-2.5 py-1 text-[12px] font-semibold",
         PRAZO_TONE[cd.tone],
       )}
     >
-      {cd.clock && <ClockIcon className="h-3 w-3" />}
+      {cd.clock && <ClockIcon className="h-[18px] w-[18px]" />}
       {cd.label}
     </span>
   );
