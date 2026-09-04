@@ -14,6 +14,7 @@ import {
   type DocActionState,
 } from "@/app/(app)/documentos/actions";
 
+// Rótulos de exibição (inclui categorias legadas ainda presentes em dados antigos).
 const CATEGORIA_LABEL: Record<DocumentoCategoria, string> = {
   contratos: "Contratos",
   certidoes: "Certidões",
@@ -22,6 +23,14 @@ const CATEGORIA_LABEL: Record<DocumentoCategoria, string> = {
   obras: "Obras",
   licitacoes: "Licitações",
 };
+
+// Categorias oferecidas ao usuário (Obras/Licitações saem — o vínculo já cobre isso).
+const CATEGORIAS_ATIVAS: DocumentoCategoria[] = [
+  "contratos",
+  "certidoes",
+  "arts_rrts",
+  "societario",
+];
 const STATUS_META = {
   valido: { tone: "positive", label: "Válido" },
   vencendo: { tone: "alert", label: "Vencendo" },
@@ -213,7 +222,11 @@ function DocDrawer({
               defaultValue={doc?.categoria ?? "contratos"}
               className={inputCls}
             >
-              {(Object.keys(CATEGORIA_LABEL) as DocumentoCategoria[]).map((c) => (
+              {/* mantém a categoria atual mesmo que seja uma legada */}
+              {(doc && !CATEGORIAS_ATIVAS.includes(doc.categoria)
+                ? [doc.categoria, ...CATEGORIAS_ATIVAS]
+                : CATEGORIAS_ATIVAS
+              ).map((c) => (
                 <option key={c} value={c}>
                   {CATEGORIA_LABEL[c]}
                 </option>

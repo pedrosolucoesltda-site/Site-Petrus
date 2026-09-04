@@ -17,6 +17,14 @@ const CATEGORIA_LABEL: Record<DocumentoCategoria, string> = {
   licitacoes: "Licitações",
 };
 
+// Categorias oferecidas nos filtros (Obras/Licitações ficam de fora).
+const CATEGORIAS_ATIVAS: DocumentoCategoria[] = [
+  "contratos",
+  "certidoes",
+  "arts_rrts",
+  "societario",
+];
+
 export default async function DocumentosPage({
   searchParams,
 }: {
@@ -32,7 +40,7 @@ export default async function DocumentosPage({
   ]);
   const anexosByRef = Object.fromEntries(groupAnexos(anexos));
 
-  const cats = Object.keys(CATEGORIA_LABEL) as DocumentoCategoria[];
+  const cats = CATEGORIAS_ATIVAS;
   const active = cats.includes(categoria as DocumentoCategoria)
     ? (categoria as DocumentoCategoria)
     : null;
