@@ -8,7 +8,7 @@ import {
   deleteUserAction,
   reset2FAAction,
   type ActionState,
-} from "@/app/(app)/usuarios/actions";
+} from "@/app/(app)/configuracoes/usuarios/actions";
 import {
   Panel,
   DataTable,

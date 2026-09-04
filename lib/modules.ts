@@ -7,7 +7,7 @@ export type ModuleKey =
   | "financeiro"
   | "documentos"
   | "fornecedores"
-  | "usuarios";
+  | "configuracoes";
 
 export interface ModuleDef {
   key: ModuleKey;
@@ -37,9 +37,9 @@ export const MODULES: ModuleDef[] = [
     accent: "purple",
   },
   {
-    key: "usuarios",
-    label: "Usuários",
-    href: "/usuarios",
+    key: "configuracoes",
+    label: "Configurações",
+    href: "/configuracoes",
     accent: "gold",
     adminOnly: true,
   },

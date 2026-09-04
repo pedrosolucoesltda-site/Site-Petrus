@@ -10,6 +10,8 @@ export interface ActionState {
   error?: string;
 }
 
+const PATH = "/configuracoes/usuarios";
+
 function isRole(v: unknown): v is UserRole {
   return v === "admin" || v === "user";
 }
@@ -44,16 +46,18 @@ export async function createUserAction(
     return { error: error?.message ?? "Falha ao criar usuário." };
   }
 
-  // O trigger handle_new_user já criou o profile; ajusta nome + papel.
   const { error: profErr } = await admin
     .from("profiles")
     .upsert(
       { id: data.user.id, full_name: fullName || email, role },
       { onConflict: "id" },
     );
-  if (profErr) return { error: `Usuário criado, mas falhou ao definir o papel: ${profErr.message}` };
+  if (profErr)
+    return {
+      error: `Usuário criado, mas falhou ao definir o papel: ${profErr.message}`,
+    };
 
-  revalidatePath("/usuarios");
+  revalidatePath(PATH);
   return { ok: `Usuário ${email} criado.` };
 }
 
@@ -68,7 +72,7 @@ export async function setRoleAction(formData: FormData): Promise<void> {
   if (userId === session.user.id) return; // não rebaixa a si mesmo
 
   await admin.from("profiles").update({ role }).eq("id", userId);
-  revalidatePath("/usuarios");
+  revalidatePath(PATH);
 }
 
 export async function deleteUserAction(formData: FormData): Promise<void> {
@@ -80,7 +84,7 @@ export async function deleteUserAction(formData: FormData): Promise<void> {
   if (!userId || userId === session.user.id) return; // não exclui a si mesmo
 
   await admin.auth.admin.deleteUser(userId);
-  revalidatePath("/usuarios");
+  revalidatePath(PATH);
 }
 
 /** Remove o 2FA de um usuário (ex.: perdeu o celular). No próximo login ele
@@ -97,5 +101,5 @@ export async function reset2FAAction(formData: FormData): Promise<void> {
   for (const f of data?.factors ?? []) {
     await admin.auth.admin.mfa.deleteFactor({ userId, id: f.id });
   }
-  revalidatePath("/usuarios");
+  revalidatePath(PATH);
 }
