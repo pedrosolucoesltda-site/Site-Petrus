@@ -33,9 +33,9 @@ export default function LoginPage() {
           priority
           quality={100}
           sizes="50vw"
-          className="object-cover"
+          className="object-cover object-top"
         />
-        <div className="absolute inset-0 bg-gradient-to-t from-[#0b1220]/90 via-[#0b1220]/10 to-transparent" />
+        <div className="absolute inset-0 bg-gradient-to-t from-[#0b1220]/95 via-[#0b1220]/5 via-35% to-transparent" />
         <div className="absolute inset-x-0 bottom-0 p-12">
           <Logo className="h-11" />
           <p className="mt-4 max-w-sm text-[15px] font-medium tracking-wide text-text-primary/90">
