@@ -27,7 +27,7 @@ export default function LoginPage() {
 
       <div className="relative hidden overflow-hidden lg:block lg:w-1/2">
         <Image
-          src="/login-banner-photo.jpg"
+          src="/login-banner-hq.jpg"
           alt="Obra em construção — Petrus Soluções"
           fill
           priority
