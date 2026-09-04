@@ -31,6 +31,7 @@ export default function LoginPage() {
           alt="Obra em construção — Petrus Soluções"
           fill
           priority
+          quality={100}
           sizes="50vw"
           className="object-cover"
         />
