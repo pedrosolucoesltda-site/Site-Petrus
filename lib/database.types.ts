@@ -8,11 +8,21 @@
  */
 
 export type ObraStatus = "em_dia" | "atencao" | "atrasada";
-export type LicitacaoFase =
-  | "em_analise"
-  | "documentacao"
-  | "enviado"
+export type LicitacaoStatus =
+  | "aberta"
+  | "em_proposta"
+  | "aguardando_julgamento"
+  | "selecao_fornecedores"
   | "resultado";
+export type LicitacaoModalidade =
+  | "concorrencia_eletronica"
+  | "concorrencia_presencial"
+  | "pregao_eletronico"
+  | "pregao_presencial"
+  | "dispensa_eletronica"
+  | "tomada_de_precos"
+  | "credenciamento"
+  | "outras";
 export type LicitacaoResultado = "vencedor" | "perdido";
 export type ContaStatus = "a_vencer" | "vencido" | "pago";
 export type DocumentoCategoria =
@@ -50,9 +60,16 @@ export type Licitacao = {
   id: string;
   orgao: string;
   objeto: string;
+  processo: string | null;
+  modalidade: LicitacaoModalidade;
+  modalidade_numero: string | null;
+  uf: string | null;
   valor_estimado: number;
+  valor_proposta: number | null;
+  classificacao: number | null;
   prazo_envio: string | null;
-  fase: LicitacaoFase;
+  data_disputa: string | null;
+  status: LicitacaoStatus;
   resultado: LicitacaoResultado | null;
   created_at: string;
 };
@@ -196,7 +213,8 @@ export type Database = {
     };
     Enums: {
       obra_status: ObraStatus;
-      licitacao_fase: LicitacaoFase;
+      licitacao_status: LicitacaoStatus;
+      licitacao_modalidade: LicitacaoModalidade;
       licitacao_resultado: LicitacaoResultado;
       conta_status: ContaStatus;
       documento_categoria: DocumentoCategoria;

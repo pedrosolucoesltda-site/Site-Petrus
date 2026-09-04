@@ -108,16 +108,16 @@ export default async function PainelPage({
         </Panel>
 
         <Panel
-          title="Editais em análise"
-          action={<LinkPill href="/licitacoes">ver todos</LinkPill>}
+          title="Licitações abertas"
+          action={<LinkPill href="/licitacoes">ver todas</LinkPill>}
         >
           {p.editaisEmAnalise.length === 0 && (
             <p className="py-6 text-[13px] text-text-muted">
-              Nenhum edital em análise.
+              Nenhuma licitação aberta.
             </p>
           )}
           {p.editaisEmAnalise.map((l) => {
-            const label = deadlineLabel(l.prazo_envio);
+            const label = deadlineLabel(l.data_disputa ?? l.prazo_envio);
             return (
               <RowItem
                 key={l.id}

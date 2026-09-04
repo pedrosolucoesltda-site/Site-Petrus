@@ -45,6 +45,13 @@ export function percent(value: number): string {
   return `${Math.round(value ?? 0)}%`;
 }
 
+const dateTimeFmt = new Intl.DateTimeFormat("pt-BR", {
+  day: "2-digit",
+  month: "2-digit",
+  year: "numeric",
+  hour: "2-digit",
+  minute: "2-digit",
+});
 const dateFmt = new Intl.DateTimeFormat("pt-BR", { dateStyle: "long" });
 const monthFmt = new Intl.DateTimeFormat("pt-BR", {
   month: "short",
@@ -68,6 +75,13 @@ export function longDate(value: string | Date | null | undefined): string {
 export function shortDate(value: string | Date | null | undefined): string {
   const d = parseDate(value);
   return d ? shortFmt.format(d) : "—";
+}
+
+/** 03/09/2026 às 14:30 */
+export function dateTime(value: string | Date | null | undefined): string {
+  const d = parseDate(value);
+  if (!d) return "—";
+  return dateTimeFmt.format(d).replace(", ", " às ");
 }
 
 /** dez/2026 */

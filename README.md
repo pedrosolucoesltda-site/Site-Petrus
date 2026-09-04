@@ -9,7 +9,7 @@ Supabase (Postgres, Auth, RLS) + assistentes de IA (API da Anthropic).
 | --------------- | ------------- | ---------------------------------------- |
 | `/painel`       | Painel geral  | Todos                                    |
 | `/obras`        | Obras         | Todos (leitura + escrita)                |
-| `/licitacoes`   | Licitações    | Todos (leitura + escrita)                |
+| `/licitacoes`   | Licitações    | Tabela: processo, modalidade, UF, proposta, classificação, status |
 | `/financeiro`   | Financeiro    | **Somente administradores**              |
 | `/documentos`   | Documentos    | Todos leem; só admin edita/exclui        |
 | `/fornecedores` | Fornecedores  | Todos (cadastro, compras, anexos)        |

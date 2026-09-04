@@ -7,7 +7,7 @@ export function cn(...parts: Array<string | false | null | undefined>): string {
   return parts.filter(Boolean).join(" ");
 }
 
-type Tone = "positive" | "alert" | "risk" | "muted" | "teal";
+type Tone = "positive" | "alert" | "risk" | "muted" | "teal" | "blue";
 
 const TONE_TEXT: Record<Tone, string> = {
   positive: "text-positive",
@@ -15,6 +15,7 @@ const TONE_TEXT: Record<Tone, string> = {
   risk: "text-risk",
   muted: "text-text-muted",
   teal: "text-teal",
+  blue: "text-blue",
 };
 
 const TONE_PILL: Record<Tone, string> = {
@@ -23,6 +24,7 @@ const TONE_PILL: Record<Tone, string> = {
   risk: "bg-risk/20 text-risk",
   muted: "bg-panel-alt text-text-secondary",
   teal: "bg-teal/15 text-teal",
+  blue: "bg-blue/15 text-blue",
 };
 
 /* ---------------------------------------------------------------- layout */

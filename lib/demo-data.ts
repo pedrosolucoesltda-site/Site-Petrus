@@ -115,67 +115,108 @@ export const obras: Obra[] = [
 
 const L = (n: number) => `b0000000-0000-4000-8000-00000000000${n}`;
 
+function lic(
+  n: number,
+  o: Omit<Licitacao, "id" | "created_at" | "prazo_envio" | "data_disputa"> & {
+    dias: number;
+  },
+): Licitacao {
+  const { dias, ...rest } = o;
+  const date = d(dias);
+  return {
+    ...rest,
+    id: L(n),
+    prazo_envio: date,
+    data_disputa: `${date}T09:00:00`,
+    created_at: nowIso,
+  };
+}
+
 export const licitacoes: Licitacao[] = [
-  {
-    id: L(1),
+  lic(1, {
     orgao: "Prefeitura de Niterói",
     objeto: "Pavimentação — Bairro Fonseca",
+    processo: "PMN 024/2026",
+    modalidade: "concorrencia_eletronica",
+    modalidade_numero: "Concorrência Eletrônica 024/2026",
+    uf: "RJ",
     valor_estimado: 3_200_000,
-    prazo_envio: d(3),
-    fase: "em_analise",
+    valor_proposta: null,
+    classificacao: null,
+    status: "aberta",
     resultado: null,
-    created_at: nowIso,
-  },
-  {
-    id: L(2),
+    dias: 3,
+  }),
+  lic(2, {
     orgao: "DER-RJ",
     objeto: "Recuperação de via — RJ-104",
+    processo: "DER 104/2026",
+    modalidade: "concorrencia_eletronica",
+    modalidade_numero: "Concorrência Eletrônica 104/2026",
+    uf: "RJ",
     valor_estimado: 5_800_000,
-    prazo_envio: d(11),
-    fase: "em_analise",
+    valor_proposta: 4_640_000,
+    classificacao: null,
+    status: "em_proposta",
     resultado: null,
-    created_at: nowIso,
-  },
-  {
-    id: L(3),
+    dias: 11,
+  }),
+  lic(3, {
     orgao: "Governo do Estado",
     objeto: "Reforma escolar — Zona Norte",
+    processo: "GOV 1003/2026",
+    modalidade: "concorrencia_presencial",
+    modalidade_numero: "Concorrência Presencial 1.003/2026",
+    uf: "RJ",
     valor_estimado: 2_100_000,
-    prazo_envio: d(19),
-    fase: "em_analise",
+    valor_proposta: null,
+    classificacao: null,
+    status: "aberta",
     resultado: null,
-    created_at: nowIso,
-  },
-  {
-    id: L(4),
+    dias: 19,
+  }),
+  lic(4, {
     orgao: "Prefeitura de São Gonçalo",
     objeto: "Drenagem — Centro",
+    processo: "PMSG 011/2026",
+    modalidade: "concorrencia_eletronica",
+    modalidade_numero: "Concorrência Eletrônica 011/2026",
+    uf: "RJ",
     valor_estimado: 4_000_000,
-    prazo_envio: d(8),
-    fase: "documentacao",
+    valor_proposta: 3_720_000,
+    classificacao: null,
+    status: "selecao_fornecedores",
     resultado: null,
-    created_at: nowIso,
-  },
-  {
-    id: L(5),
+    dias: 8,
+  }),
+  lic(5, {
     orgao: "CEDAE",
     objeto: "Manutenção de rede — Zona Sul",
+    processo: "CEDAE 037/2026",
+    modalidade: "pregao_eletronico",
+    modalidade_numero: "Pregão Eletrônico 037/2026",
+    uf: "RJ",
     valor_estimado: 1_600_000,
-    prazo_envio: d(15),
-    fase: "enviado",
+    valor_proposta: 1_488_000,
+    classificacao: 2,
+    status: "aguardando_julgamento",
     resultado: null,
-    created_at: nowIso,
-  },
-  {
-    id: L(6),
+    dias: -1,
+  }),
+  lic(6, {
     orgao: "Prefeitura de Itaboraí",
     objeto: "Construção de creche municipal",
+    processo: "PMI 002/2026",
+    modalidade: "concorrencia_eletronica",
+    modalidade_numero: "Concorrência Eletrônica 002/2026",
+    uf: "RJ",
     valor_estimado: 2_900_000,
-    prazo_envio: d(-10),
-    fase: "resultado",
+    valor_proposta: 2_712_000,
+    classificacao: 1,
+    status: "resultado",
     resultado: "vencedor",
-    created_at: nowIso,
-  },
+    dias: -10,
+  }),
 ];
 
 const DOCS_HABILITACAO = [

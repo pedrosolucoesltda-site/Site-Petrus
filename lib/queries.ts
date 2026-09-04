@@ -100,7 +100,7 @@ function mapLicitacoes(
 export async function getLicitacoes(): Promise<LicitacaoComChecklist[]> {
   if (isDemoMode) {
     return mapLicitacoes(
-      byDateAsc(demo.licitacoes, (l) => l.prazo_envio),
+      byDateAsc(demo.licitacoes, (l) => l.data_disputa),
       demo.licitacaoChecklist,
       [],
     );
@@ -112,7 +112,7 @@ export async function getLicitacoes(): Promise<LicitacaoComChecklist[]> {
         supabase
           .from("licitacoes")
           .select("*")
-          .order("prazo_envio", { ascending: true, nullsFirst: false }),
+          .order("data_disputa", { ascending: true, nullsFirst: false }),
       "licitacoes",
     ),
     safe<LicitacaoChecklist>(
@@ -348,12 +348,12 @@ export async function getPainel() {
   const obrasCriticas = obras.filter(
     (o) => o.status === "atencao" || o.status === "atrasada",
   );
-  const licitacoesAbertas = licitacoes.filter((l) => l.fase !== "resultado");
+  const licitacoesAbertas = licitacoes.filter((l) => l.status !== "resultado");
   const licitacoesUrgentes = licitacoesAbertas.filter((l) => {
-    const d = daysUntil(l.prazo_envio);
+    const d = daysUntil(l.data_disputa ?? l.prazo_envio);
     return d !== null && d >= 0 && d <= 3;
   });
-  const editaisEmAnalise = licitacoes.filter((l) => l.fase === "em_analise");
+  const editaisEmAnalise = licitacoes.filter((l) => l.status === "aberta");
   const obrasConcluidas = obras.filter((o) => o.progresso_pct >= 100);
   const licitacoesVencedoras = licitacoes.filter(
     (l) => l.resultado === "vencedor",
@@ -361,8 +361,8 @@ export async function getPainel() {
 
   const proximoPrazo =
     licitacoesAbertas
-      .filter((l) => l.prazo_envio)
-      .map((l) => l.prazo_envio as string)
+      .map((l) => l.data_disputa ?? l.prazo_envio)
+      .filter((d): d is string => Boolean(d))
       .sort()
       .at(0) ?? null;
 

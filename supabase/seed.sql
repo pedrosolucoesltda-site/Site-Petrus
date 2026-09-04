@@ -16,13 +16,15 @@ insert into obras (id, nome, cidade_uf, status, progresso_pct, responsavel, data
 on conflict (id) do nothing;
 
 -- ---------- Licitações ----------
-insert into licitacoes (id, orgao, objeto, valor_estimado, prazo_envio, fase, resultado) values
-  ('b0000000-0000-4000-8000-000000000001', 'Prefeitura de Niterói',   'Pavimentação — Bairro Fonseca',     3200000, current_date + 3,  'em_analise',   null),
-  ('b0000000-0000-4000-8000-000000000002', 'DER-RJ',                   'Recuperação de via — RJ-104',      5800000, current_date + 11, 'em_analise',   null),
-  ('b0000000-0000-4000-8000-000000000003', 'Governo do Estado',       'Reforma escolar — Zona Norte',     2100000, current_date + 19, 'em_analise',   null),
-  ('b0000000-0000-4000-8000-000000000004', 'Prefeitura de São Gonçalo','Drenagem — Centro',                4000000, current_date + 8,  'documentacao', null),
-  ('b0000000-0000-4000-8000-000000000005', 'CEDAE',                   'Manutenção de rede — Zona Sul',     1600000, current_date + 15, 'enviado',      null),
-  ('b0000000-0000-4000-8000-000000000006', 'Prefeitura de Itaboraí',  'Construção de creche municipal',    2900000, current_date - 10, 'resultado',    'vencedor')
+insert into licitacoes
+  (id, orgao, objeto, processo, modalidade, modalidade_numero, uf,
+   valor_estimado, valor_proposta, classificacao, prazo_envio, data_disputa, status, resultado) values
+  ('b0000000-0000-4000-8000-000000000001', 'Prefeitura de Niterói',    'Pavimentação — Bairro Fonseca',   'PMN 024/2026',  'concorrencia_eletronica', 'Concorrência Eletrônica 024/2026', 'RJ', 3200000, null,    null, current_date + 3,  (current_date + 3)  + time '09:00', 'aberta',                null),
+  ('b0000000-0000-4000-8000-000000000002', 'DER-RJ',                   'Recuperação de via — RJ-104',      'DER 104/2026',  'concorrencia_eletronica', 'Concorrência Eletrônica 104/2026', 'RJ', 5800000, 4640000, null, current_date + 11, (current_date + 11) + time '09:00', 'em_proposta',           null),
+  ('b0000000-0000-4000-8000-000000000003', 'Governo do Estado',        'Reforma escolar — Zona Norte',     'GOV 1003/2026', 'concorrencia_presencial', 'Concorrência Presencial 1.003/2026','RJ', 2100000, null,    null, current_date + 19, (current_date + 19) + time '09:00', 'aberta',                null),
+  ('b0000000-0000-4000-8000-000000000004', 'Prefeitura de São Gonçalo','Drenagem — Centro',                 'PMSG 011/2026', 'concorrencia_eletronica', 'Concorrência Eletrônica 011/2026', 'RJ', 4000000, 3720000, null, current_date + 8,  (current_date + 8)  + time '09:00', 'selecao_fornecedores',  null),
+  ('b0000000-0000-4000-8000-000000000005', 'CEDAE',                    'Manutenção de rede — Zona Sul',     'CEDAE 037/2026','pregao_eletronico',       'Pregão Eletrônico 037/2026',       'RJ', 1600000, 1488000, 2,    current_date - 1,  (current_date - 1)  + time '09:00', 'aguardando_julgamento', null),
+  ('b0000000-0000-4000-8000-000000000006', 'Prefeitura de Itaboraí',   'Construção de creche municipal',    'PMI 002/2026',  'concorrencia_eletronica', 'Concorrência Eletrônica 002/2026', 'RJ', 2900000, 2712000, 1,    current_date - 10, (current_date - 10) + time '09:00', 'resultado',             'vencedor')
 on conflict (id) do nothing;
 
 insert into licitacao_checklist (licitacao_id, documento_exigido, entregue) values

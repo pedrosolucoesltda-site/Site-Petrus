@@ -3,39 +3,67 @@
 import { revalidatePath } from "next/cache";
 import { requireSession } from "@/lib/auth";
 import { createClient } from "@/lib/supabase/server";
-import type { LicitacaoFase, LicitacaoResultado } from "@/lib/database.types";
+import type {
+  LicitacaoModalidade,
+  LicitacaoResultado,
+  LicitacaoStatus,
+} from "@/lib/database.types";
 
 export interface ActionState {
   ok?: boolean;
   error?: string;
 }
 
-const FASES: LicitacaoFase[] = [
-  "em_analise",
-  "documentacao",
-  "enviado",
+const STATUSES: LicitacaoStatus[] = [
+  "aberta",
+  "em_proposta",
+  "aguardando_julgamento",
+  "selecao_fornecedores",
   "resultado",
 ];
+const MODALIDADES: LicitacaoModalidade[] = [
+  "concorrencia_eletronica",
+  "concorrencia_presencial",
+  "pregao_eletronico",
+  "pregao_presencial",
+  "dispensa_eletronica",
+  "tomada_de_precos",
+  "credenciamento",
+  "outras",
+];
 
-function parseValor(raw: FormDataEntryValue | null): number {
-  const s = String(raw ?? "")
-    .replace(/[R$\s.]/g, "")
-    .replace(",", ".");
+function parseValor(raw: FormDataEntryValue | null): number | null {
+  const s = String(raw ?? "").replace(/[R$\s.]/g, "").replace(",", ".");
+  if (!s) return null;
   const n = Number(s);
-  return Number.isFinite(n) && n >= 0 ? n : 0;
+  return Number.isFinite(n) && n >= 0 ? n : null;
 }
 
 function fieldsFromForm(formData: FormData) {
-  const fase = String(formData.get("fase") ?? "em_analise") as LicitacaoFase;
+  const modalidade = String(
+    formData.get("modalidade") ?? "outras",
+  ) as LicitacaoModalidade;
+  const status = String(formData.get("status") ?? "aberta") as LicitacaoStatus;
   const rawResultado = String(formData.get("resultado") ?? "");
+  const rawClass = String(formData.get("classificacao") ?? "").trim();
+  const dataDisputa = String(formData.get("data_disputa") ?? "");
+
   return {
     orgao: String(formData.get("orgao") ?? "").trim(),
     objeto: String(formData.get("objeto") ?? "").trim(),
-    valor_estimado: parseValor(formData.get("valor_estimado")),
-    prazo_envio: String(formData.get("prazo_envio") ?? "") || null,
-    fase: FASES.includes(fase) ? fase : "em_analise",
+    processo: String(formData.get("processo") ?? "").trim() || null,
+    modalidade: MODALIDADES.includes(modalidade) ? modalidade : "outras",
+    modalidade_numero:
+      String(formData.get("modalidade_numero") ?? "").trim() || null,
+    uf: String(formData.get("uf") ?? "").trim().toUpperCase().slice(0, 2) || null,
+    valor_estimado: parseValor(formData.get("valor_estimado")) ?? 0,
+    valor_proposta: parseValor(formData.get("valor_proposta")),
+    classificacao: rawClass && Number(rawClass) >= 1 ? Number(rawClass) : null,
+    data_disputa: dataDisputa ? new Date(dataDisputa).toISOString() : null,
+    status: STATUSES.includes(status) ? status : "aberta",
     resultado:
-      fase === "resultado" && (rawResultado === "vencedor" || rawResultado === "perdido")
+      status === "resultado" &&
+      (rawResultado === "vencedor" || rawResultado === "perdido")
         ? (rawResultado as LicitacaoResultado)
         : null,
   };
@@ -52,8 +80,8 @@ export async function createLicitacao(
   const supabase = await createClient();
   const { error } = await supabase.from("licitacoes").insert(f);
   if (error) return { error: error.message };
-
   revalidatePath("/licitacoes");
+  revalidatePath("/painel");
   return { ok: true };
 }
 
@@ -63,31 +91,31 @@ export async function updateLicitacao(
 ): Promise<ActionState> {
   await requireSession();
   const id = String(formData.get("id") ?? "");
-  if (!id) return { error: "Edital não identificado." };
+  if (!id) return { error: "Licitação não identificada." };
   const f = fieldsFromForm(formData);
   if (!f.orgao || !f.objeto) return { error: "Órgão e objeto são obrigatórios." };
 
   const supabase = await createClient();
   const { error } = await supabase.from("licitacoes").update(f).eq("id", id);
   if (error) return { error: error.message };
-
   revalidatePath("/licitacoes");
+  revalidatePath("/painel");
   return { ok: true };
 }
 
-/** Movimento rápido no funil (arrastar entre colunas). */
-export async function moveLicitacaoFase(formData: FormData): Promise<void> {
+/** Mudança rápida de status a partir da tabela. */
+export async function setLicitacaoStatus(formData: FormData): Promise<void> {
   await requireSession();
   const id = String(formData.get("id") ?? "");
-  const fase = String(formData.get("fase") ?? "") as LicitacaoFase;
-  if (!id || !FASES.includes(fase)) return;
-
+  const status = String(formData.get("status") ?? "") as LicitacaoStatus;
+  if (!id || !STATUSES.includes(status)) return;
   const supabase = await createClient();
   await supabase
     .from("licitacoes")
-    .update({ fase, resultado: fase === "resultado" ? undefined : null })
+    .update({ status, resultado: status === "resultado" ? undefined : null })
     .eq("id", id);
   revalidatePath("/licitacoes");
+  revalidatePath("/painel");
 }
 
 export async function deleteLicitacao(formData: FormData): Promise<void> {
@@ -97,6 +125,7 @@ export async function deleteLicitacao(formData: FormData): Promise<void> {
   const supabase = await createClient();
   await supabase.from("licitacoes").delete().eq("id", id);
   revalidatePath("/licitacoes");
+  revalidatePath("/painel");
 }
 
 /* ---------------- checklist ---------------- */
