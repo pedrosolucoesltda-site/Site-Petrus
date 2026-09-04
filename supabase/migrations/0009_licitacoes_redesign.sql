@@ -42,9 +42,9 @@ update licitacoes set status = case fase
   else 'aberta'
 end::licitacao_status;
 
--- data_disputa a partir do antigo prazo_envio
+-- data_disputa a partir do antigo prazo_envio (09:00 no fuso de Brasília)
 update licitacoes
-  set data_disputa = (prazo_envio + time '09:00')
+  set data_disputa = ((prazo_envio + time '09:00') at time zone 'America/Sao_Paulo')
   where data_disputa is null and prazo_envio is not null;
 
 alter table licitacoes drop column if exists fase;

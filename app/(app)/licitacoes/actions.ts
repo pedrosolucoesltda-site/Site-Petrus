@@ -5,6 +5,7 @@ import { requireSession } from "@/lib/auth";
 import { createClient } from "@/lib/supabase/server";
 import { registrarAtividade } from "@/lib/atividades";
 import { STATUS_LABEL } from "@/lib/licitacoes";
+import { datetimeLocalToISO } from "@/lib/format";
 import type {
   LicitacaoModalidade,
   LicitacaoResultado,
@@ -61,7 +62,7 @@ function fieldsFromForm(formData: FormData) {
     valor_estimado: parseValor(formData.get("valor_estimado")) ?? 0,
     valor_proposta: parseValor(formData.get("valor_proposta")),
     classificacao: rawClass && Number(rawClass) >= 1 ? Number(rawClass) : null,
-    data_disputa: dataDisputa ? new Date(dataDisputa).toISOString() : null,
+    data_disputa: datetimeLocalToISO(dataDisputa),
     status: STATUSES.includes(status) ? status : "aberta",
     resultado:
       status === "resultado" &&

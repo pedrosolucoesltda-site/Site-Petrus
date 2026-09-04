@@ -1,3 +1,4 @@
+import { daysUntil } from "@/lib/format";
 import type {
   Licitacao,
   LicitacaoModalidade,
@@ -72,17 +73,12 @@ export function countdown(l: Licitacao): Countdown {
   const diffH = (alvo - agora) / 3_600_000;
 
   if (diffH <= 0) return { label: "Encerrada", tone: "muted", clock: true };
+  // disputa hoje (calendário de Brasília)
+  if (daysUntil(iso) === 0)
+    return { label: "Aberta", tone: "positive", clock: true };
   if (diffH < 24)
     return { label: `${Math.ceil(diffH)}h`, tone: "risk", clock: true };
   const dias = Math.ceil(diffH / 24);
-  if (dias <= 2) {
-    const hoje = new Date();
-    hoje.setHours(0, 0, 0, 0);
-    const alvoDia = new Date(iso);
-    alvoDia.setHours(0, 0, 0, 0);
-    if (alvoDia.getTime() === hoje.getTime())
-      return { label: "Aberta", tone: "positive", clock: true };
-  }
   return { label: `${dias}d`, tone: dias <= 7 ? "alert" : "muted", clock: true };
 }
 

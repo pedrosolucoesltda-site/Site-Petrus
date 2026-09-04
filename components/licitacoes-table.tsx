@@ -3,7 +3,12 @@
 import { useActionState, useEffect, useMemo, useState } from "react";
 import type { LicitacaoComChecklist } from "@/lib/queries";
 import type { LicitacaoStatus } from "@/lib/database.types";
-import { money, moneyCompact, dateTime } from "@/lib/format";
+import {
+  money,
+  moneyCompact,
+  dateTime,
+  isoToDatetimeLocal,
+} from "@/lib/format";
 import {
   STATUS_LABEL,
   STATUS_ORDER,
@@ -324,7 +329,7 @@ function LicitacaoDrawer({
   }, [state.ok, onClose]);
 
   const dtLocal = lic?.data_disputa
-    ? new Date(lic.data_disputa).toISOString().slice(0, 16)
+    ? isoToDatetimeLocal(lic.data_disputa)
     : lic?.prazo_envio
       ? `${lic.prazo_envio}T09:00`
       : "";
