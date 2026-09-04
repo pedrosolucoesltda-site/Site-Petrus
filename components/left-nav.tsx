@@ -4,6 +4,7 @@ import Link from "next/link";
 import { usePathname } from "next/navigation";
 import { MODULES } from "@/lib/modules";
 import { MODULE_ICONS } from "@/components/icons";
+import { LogoMark } from "@/components/logo";
 import { cn } from "@/components/ui";
 
 export function LeftNav({
@@ -18,9 +19,7 @@ export function LeftNav({
 
   return (
     <nav className="flex flex-col items-center gap-1.5 border-r border-border-soft bg-rail py-[18px]">
-      <div className="mb-[22px] flex h-[34px] w-[34px] items-center justify-center rounded-lg bg-gold font-grotesk text-base font-bold text-[#141410]">
-        P
-      </div>
+      <LogoMark className="mb-[22px] h-[34px] w-[34px]" />
 
       {items.map((m) => {
         const Icon = MODULE_ICONS[m.key];

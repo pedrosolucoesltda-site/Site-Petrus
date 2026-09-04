@@ -4,6 +4,7 @@ import { useEffect, useRef, useState } from "react";
 import { useRouter } from "next/navigation";
 import { createClient } from "@/lib/supabase/client";
 import { isDemoMode } from "@/lib/env";
+import { Logo } from "@/components/logo";
 
 type Phase = "loading" | "enroll" | "challenge" | "done";
 
@@ -94,14 +95,11 @@ export default function TwoFactorPage() {
   return (
     <main className="flex min-h-screen items-center justify-center px-4">
       <div className="w-full max-w-sm">
-        <div className="mb-8 flex items-center gap-3">
-          <div className="flex h-9 w-9 items-center justify-center rounded-lg bg-gold font-grotesk text-base font-bold text-[#141410]">
-            P
-          </div>
-          <div>
-            <p className="text-sm font-semibold">Petrus Soluções</p>
-            <p className="text-[12px] text-text-muted">Verificação em duas etapas</p>
-          </div>
+        <div className="mb-8">
+          <Logo />
+          <p className="mt-2 text-[12px] text-text-muted">
+            Verificação em duas etapas
+          </p>
         </div>
 
         <div className="rounded-md border border-border-soft bg-panel p-6">
