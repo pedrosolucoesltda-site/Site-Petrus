@@ -29,6 +29,27 @@ function textHeaders(conversationId: string | null) {
   return h;
 }
 
+/** Traduz erros da API da Anthropic em mensagens claras para o usuário. */
+function friendlyError(err: unknown): string {
+  if (err instanceof Anthropic.APIError) {
+    const raw = String(err.message ?? "").toLowerCase();
+    if (raw.includes("credit balance is too low") || raw.includes("billing")) {
+      return "⚠️ A conta da Anthropic está sem créditos. Adicione créditos em console.anthropic.com → Settings → Billing para ativar os assistentes.";
+    }
+    if (err.status === 401 || raw.includes("invalid x-api-key")) {
+      return "⚠️ A chave da API da Anthropic é inválida ou foi revogada. Verifique a variável ANTHROPIC_API_KEY.";
+    }
+    if (err.status === 429) {
+      return "⚠️ Muitas requisições seguidas à Anthropic. Aguarde alguns segundos e tente de novo.";
+    }
+    if (err.status === 529 || raw.includes("overloaded")) {
+      return "⚠️ A API da Anthropic está sobrecarregada no momento. Tente novamente em instantes.";
+    }
+    return `⚠️ Erro na API da Anthropic (${err.status}). Tente novamente.`;
+  }
+  return "⚠️ Não foi possível falar com o assistente agora. Tente novamente.";
+}
+
 /** Streams the Anthropic reply as plain text; calls `onDone` with the full text. */
 function streamReply(
   assistant: AssistantDef,
@@ -59,10 +80,7 @@ function streamReply(
           }
         }
       } catch (err) {
-        const msg =
-          err instanceof Anthropic.APIError
-            ? `\n\n[erro ${err.status}: ${err.message}]`
-            : "\n\n[erro ao consultar o assistente]";
+        const msg = (full ? "\n\n" : "") + friendlyError(err);
         full += msg;
         controller.enqueue(encoder.encode(msg));
       } finally {
@@ -94,7 +112,7 @@ export async function POST(request: NextRequest) {
 
   const notice =
     `[${assistant.name}] O assistente ainda não está conectado. ` +
-    `Defina ANTHROPIC_API_KEY em .env.local para ativar as respostas de IA.`;
+    `Defina a variável ANTHROPIC_API_KEY para ativar as respostas de IA.`;
 
   // ── modo demonstração: sem Supabase, sem histórico persistido ─────
   if (isDemoMode) {
